@@ -1,5 +1,4 @@
 import Quiz from "../models/Quiz.js";
-import asyncHandler from "../middleware/asyncHandler.js";
 
 // GET ALL QUIZZES
 export const getQuizzes = asyncHandler(async (req, res) => {
