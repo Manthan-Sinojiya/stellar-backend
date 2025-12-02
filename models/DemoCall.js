@@ -4,7 +4,7 @@ const demoCallSchema = new mongoose.Schema(
   {
     fullName: { type: String, required: true },
     email: { type: String, required: true },
-    mobile: { type: String, required: true },
+    mobile: { type: String, required: false },
     message: { type: String },
   },
   { timestamps: true }
