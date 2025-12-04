@@ -38,12 +38,20 @@ router.post(
 router.post(
   "/book",
   asyncHandler(async (req, res) => {
-    const saved = await DemoCall.create(req.body);
+    try {
+      const saved = await DemoCall.create(req.body);
 
-    res.status(201).json({
-      message: "Demo call booked successfully",
-      data: saved,
-    });
+      res.status(201).json({
+        message: "Demo call booked successfully",
+        data: saved,
+      });
+    } catch (err) {
+      console.error("BOOKING ERROR:", err);
+      res.status(400).json({
+        message: "Failed to book demo",
+        error: err.message,
+      });
+    }
   })
 );
 
