@@ -8,6 +8,7 @@ import quizRoutes from "./routes/quizRoutes.js";
 import quizresultRoutes from "./routes/quizresultRoutes.js";
 import otpRoutes from "./routes/otp.js";
 import userRoutes from "./routes/userRoutes.js";
+import demoCallRoutes from "./routes/demoCallRoutes.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 
 dotenv.config();
@@ -23,6 +24,7 @@ app.use("/api/quiz", quizRoutes);
 app.use("/api/quizresult", quizresultRoutes);
 app.use("/api/otp", otpRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/demo-call", demoCallRoutes);
 
 // GLOBAL ERROR HANDLER
 app.use(errorHandler);
