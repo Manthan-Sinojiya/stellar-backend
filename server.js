@@ -52,9 +52,7 @@ import fs from "fs";
 // This block ensures the Google Cloud client can find the service account credentials.
 if (process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON) {
   const jsonPath = "/tmp/recaptcha.json";
-  // Writes the JSON content from the ENV variable to a temporary file
   fs.writeFileSync(jsonPath, process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON);
-  // Sets the environment variable that the @google-cloud library looks for
   process.env.GOOGLE_APPLICATION_CREDENTIALS = jsonPath;
 }
 // --- END: reCAPTCHA Credential Setup ---
