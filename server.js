@@ -10,6 +10,7 @@ import otpRoutes from "./routes/otp.js";
 import userRoutes from "./routes/userRoutes.js";
 import demoCallRoutes from "./routes/demoCallRoutes.js";
 import { errorHandler } from "./middleware/errorHandler.js";
+import recaptchaRoutes from "./routes/recaptchaRoutes.js";
 
 dotenv.config();
 connectDB();
@@ -25,6 +26,7 @@ app.use("/api/quizresult", quizresultRoutes);
 app.use("/api/otp", otpRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/demo-call", demoCallRoutes);
+app.use("/api/recaptcha", recaptchaRoutes);
 
 // GLOBAL ERROR HANDLER
 app.use(errorHandler);
