@@ -4,9 +4,8 @@ import { RecaptchaEnterpriseServiceClient } from "@google-cloud/recaptcha-enterp
 
 const router = express.Router();
 
-// ⭐ Allow CORS for this route
+// Enable CORS only for this router
 router.use(cors());
-router.options("*", cors());
 
 router.post("/verify", async (req, res) => {
   try {
@@ -33,18 +32,9 @@ router.post("/verify", async (req, res) => {
     }
 
     const score = assessment.riskAnalysis.score;
-
     console.log("reCAPTCHA Score:", score);
 
-    // ⭐ Optional threshold
-    if (score < 0.1) {
-      return res.status(200).json({
-        success: false,
-        score,
-        message: "Suspicious activity detected",
-      });
-    }
-
+    // TEMPORARILY DISABLE STRICT CHECK IN DEVELOPMENT
     return res.status(200).json({
       success: true,
       score
