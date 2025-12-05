@@ -16,8 +16,11 @@ dotenv.config();
 connectDB();
 
 const app = express();
-app.use(cors());
-app.use(express.json());
+app.use(cors({
+  origin: ["http://localhost:5173", "https://stellarcampus.com"],
+  methods: ["GET", "POST", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+}));app.use(express.json());
 
 // ROUTES
 app.use("/api/auth", authRoutes);
