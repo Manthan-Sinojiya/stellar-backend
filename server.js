@@ -46,30 +46,25 @@ import userRoutes from "./routes/userRoutes.js";
 import demoCallRoutes from "./routes/demoCallRoutes.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import recaptchaRoutes from "./routes/recaptchaRoutes.js";
-import fs from "fs";
+import fs from "fs"; // Still needed if you use other fs operations, but not for recaptcha anymore
 
-// --- START: reCAPTCHA Credential Setup (Critical for 500 Error) ---
-// This block ensures the Google Cloud client can find the service account credentials.
-if (process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON) {
-  const jsonPath = "/tmp/recaptcha.json";
-  fs.writeFileSync(jsonPath, process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON);
-  process.env.GOOGLE_APPLICATION_CREDENTIALS = jsonPath;
-}
-// --- END: reCAPTCHA Credential Setup ---
+// NOTE: The previous logic for GOOGLE_APPLICATION_CREDENTIALS is REMOVED 
+// as it caused errors. We now handle credentials directly in recaptchaRoutes.js.
 
 dotenv.config();
 connectDB();
 
 const app = express();
 
-// --- CORS Configuration (Global, Fixes Conflict) ---
-// Note: This needs to be before any routes or express.json() call.
+// --- CRITICAL CORS CONFIGURATION (MUST BE FIRST) ---
 app.use(cors({
+  // Ensure all allowed origins are listed
   origin: ["http://localhost:5173", "https://stellarcampus.com"],
-  methods: ["GET", "POST", "OPTIONS"],
+  // Ensure the OPTIONS method is allowed for preflight requests
+  methods: ["GET", "POST", "OPTIONS"], 
   allowedHeaders: ["Content-Type", "Authorization"],
 }));
-// --- END CORS Configuration ---
+// ---------------------------------------------------
 
 app.use(express.json());
 
@@ -80,7 +75,7 @@ app.use("/api/quizresult", quizresultRoutes);
 app.use("/api/otp", otpRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/demo-call", demoCallRoutes);
-app.use("/api/recaptcha", recaptchaRoutes);
+app.use("/api/recaptcha", recaptchaRoutes); // This route must be covered by the global CORS
 
 // GLOBAL ERROR HANDLER
 app.use(errorHandler);

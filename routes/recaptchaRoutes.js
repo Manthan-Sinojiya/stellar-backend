@@ -58,25 +58,22 @@ import { RecaptchaEnterpriseServiceClient } from "@google-cloud/recaptcha-enterp
 
 const router = express.Router();
 
-// Define credentials outside the route handler for performance and readability
-const credentials = process.env.GOOGLE_SA_KEY_JSON ? 
-    JSON.parse(process.env.GOOGLE_SA_KEY_JSON) : null;
+// ❌ REMOVED: router.use(cors()); // Global CORS in server.js is sufficient and avoids conflicts.
 
-// Use the environment variable for the project ID
+// --- CRITICAL AUTHENTICATION SETUP ---
+// You must set GOOGLE_SA_KEY_JSON (or similar) on Render with the JSON content.
+const credentialsJson = process.env.GOOGLE_SA_KEY_JSON || process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON;
+const credentials = credentialsJson ? JSON.parse(credentialsJson) : null;
+// ------------------------------------
+
 const PROJECT_ID = "stellar-f5d09";
 const SITE_KEY = "6Lcg4SEsAAAAAHYa_r1sqEbhrvmH6H-lGSp45LPK";
 
-// The overall application structure remains the same
 router.post("/verify", async (req, res) => {
   try {
     const { token } = req.body;
 
-    if (!token) {
-        return res.status(400).json({ success: false, message: "Missing reCAPTCHA token" });
-    }
-
-    // Initialize the client, explicitly passing credentials if they exist
-    // If credentials is null, it falls back to default authentication (which usually fails on Render)
+    // Initialize client, passing credentials directly. This fixes the ENOENT error.
     const client = new RecaptchaEnterpriseServiceClient({ credentials });
     
     const projectPath = client.projectPath(PROJECT_ID);
@@ -91,7 +88,6 @@ router.post("/verify", async (req, res) => {
       },
     });
 
-    // ... (rest of the logic is the same)
     if (!assessment.tokenProperties.valid) {
       console.warn("reCAPTCHA Invalid:", assessment.tokenProperties.invalidReason); 
       return res.status(200).json({
@@ -101,10 +97,15 @@ router.post("/verify", async (req, res) => {
     }
 
     const score = assessment.riskAnalysis.score;
-    return res.status(200).json({ success: true, score });
+    console.log("reCAPTCHA Score:", score);
+
+    return res.status(200).json({
+      success: true,
+      score
+    });
 
   } catch (err) {
-    console.error("reCAPTCHA Verification Error:", err.message, err.stack); 
+    console.error("reCAPTCHA Verification Error (500):", err.message, err.stack);
     res.status(500).json({
       success: false,
       message: "Verification failed due to server error.",
