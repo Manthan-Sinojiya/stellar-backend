@@ -11,7 +11,13 @@ import userRoutes from "./routes/userRoutes.js";
 import demoCallRoutes from "./routes/demoCallRoutes.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import recaptchaRoutes from "./routes/recaptchaRoutes.js";
+import fs from "fs";
 
+if (process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON) {
+  const jsonPath = "/tmp/recaptcha.json";
+  fs.writeFileSync(jsonPath, process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON);
+  process.env.GOOGLE_APPLICATION_CREDENTIALS = jsonPath;
+}
 dotenv.config();
 connectDB();
 
