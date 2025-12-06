@@ -34,24 +34,44 @@ const router = express.Router();
 //   })
 // );
 
-// BOOK DEMO
+/* ======================================================
+   BOOK DEMO CALL (POST /api/demo-call/book)
+====================================================== */
 router.post(
   "/book",
   asyncHandler(async (req, res) => {
-    try {
-      const saved = await DemoCall.create(req.body);
+    const saved = await DemoCall.create(req.body);
 
-      res.status(201).json({
-        message: "Demo call booked successfully",
-        data: saved,
-      });
-    } catch (err) {
-      console.error("BOOKING ERROR:", err);
-      res.status(400).json({
-        message: "Failed to book demo",
-        error: err.message,
-      });
+    if (!saved) {
+      res.status(400);
+      throw new Error("Failed to save demo call");
     }
+
+    res.status(201).json({
+      message: "Demo call booked successfully",
+      data: saved,
+    });
+  })
+);
+
+/* ======================================================
+   GET ALL DEMO CALL REQUESTS (Admin)
+   GET /api/demo-call/all
+====================================================== */
+router.get(
+  "/all",
+  asyncHandler(async (req, res) => {
+    const calls = await DemoCall.find().sort({ createdAt: -1 });
+
+    if (!calls) {
+      res.status(404);
+      throw new Error("No schedule call data found");
+    }
+
+    res.status(200).json({
+      message: "Schedule call list fetched successfully",
+      data: calls,
+    });
   })
 );
 
