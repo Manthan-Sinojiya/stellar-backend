@@ -75,22 +75,25 @@ router.get(
   })
 );
 
+/* ======================================================
+   DELETE DEMO CALL ENTRY
+   DELETE /api/demo-call/:id
+====================================================== */
 router.delete(
   "/:id",
   asyncHandler(async (req, res) => {
-    const id = req.params.id;
+    const { id } = req.params;
 
-    const findCall = await DemoCall.findById(id);
+    const deleted = await DemoCall.findByIdAndDelete(id);
 
-    if (!findCall) {
+    if (!deleted) {
       res.status(404);
-      throw new Error("Schedule call entry not found");
+      throw new Error("Entry not found");
     }
 
-    await DemoCall.findByIdAndDelete(id);
-
     res.status(200).json({
-      message: "Schedule call entry deleted successfully",
+      message: "Entry deleted successfully",
+      deletedId: id,
     });
   })
 );
