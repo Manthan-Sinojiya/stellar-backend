@@ -75,4 +75,24 @@ router.get(
   })
 );
 
+router.delete(
+  "/:id",
+  asyncHandler(async (req, res) => {
+    const id = req.params.id;
+
+    const findCall = await DemoCall.findById(id);
+
+    if (!findCall) {
+      res.status(404);
+      throw new Error("Schedule call entry not found");
+    }
+
+    await DemoCall.findByIdAndDelete(id);
+
+    res.status(200).json({
+      message: "Schedule call entry deleted successfully",
+    });
+  })
+);
+
 export default router;
