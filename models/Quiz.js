@@ -5,7 +5,7 @@ const QuestionSchema = new mongoose.Schema({
   question: { type: String, required: true },
   type: { type: String, enum: ["mcq", "checkbox", "text"], required: true },
   options: { type: [String], default: [] },
-  answer: { type: mongoose.Schema.Types.Mixed, required: true }
+  answer: { type: mongoose.Schema.Types.Mixed, required: true },
 });
 
 const QuizSchema = new mongoose.Schema(
@@ -16,6 +16,13 @@ const QuizSchema = new mongoose.Schema(
       enum: ["Entrance Test", "Scholarship Quiz", "Other"],
       required: true,
     },
+
+    // ⭐ IMPORTANT: Fix for publish/unpublish
+    isPublished: {
+      type: Boolean,
+      default: false,
+    },
+
     questions: [QuestionSchema],
   },
   { timestamps: true }
