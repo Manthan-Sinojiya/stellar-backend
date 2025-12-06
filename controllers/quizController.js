@@ -1,7 +1,8 @@
+// controllers/quizController.js
 import Quiz from "../models/Quiz.js";
 import asyncHandler from "express-async-handler";
 
-// GET ALL QUIZZES (with optional pagination)
+// GET ALL QUIZZES
 export const getQuizzes = asyncHandler(async (req, res) => {
   const { page = 1, limit = 20 } = req.query;
 
@@ -26,37 +27,43 @@ export const getQuiz = asyncHandler(async (req, res) => {
   const quiz = await Quiz.findById(req.params.id);
 
   if (!quiz) {
-    const error = new Error("Quiz not found");
-    error.statusCode = 404;
-    throw error;
+    return res.status(404).json({ success: false, message: "Quiz not found" });
   }
 
   res.json({ success: true, quiz });
 });
 
+// VALIDATION FUNCTION
+const validateQuestion = (q) => {
+  if (!q.question) {
+    throw new Error("Question text is required");
+  }
+
+  if (!["mcq", "checkbox", "text"].includes(q.type)) {
+    throw new Error("Invalid question type");
+  }
+
+  if (q.type !== "text" && (!Array.isArray(q.options) || q.options.length < 2)) {
+    throw new Error("MCQ/Checkbox requires at least 2 options");
+  }
+
+  if (!q.answer) {
+    throw new Error("Answer is required");
+  }
+};
+
 // CREATE QUIZ
 export const createQuiz = asyncHandler(async (req, res) => {
   const { title, category, questions } = req.body;
 
-  if (!title || !category || !Array.isArray(questions) || questions.length === 0) {
-    const error = new Error("Title, category, and at least one question are required");
-    error.statusCode = 400;
-    throw error;
+  if (!title || !category || !questions?.length) {
+    return res.status(400).json({ success: false, message: "Missing fields" });
   }
 
-  // Validate questions
-  for (const question of questions) {
-    if (!question.text || !Array.isArray(question.options) || question.options.length < 2) {
-      const error = new Error("Each question must have text and at least two options");
-      error.statusCode = 400;
-      throw error;
-    }
-
-    if (!question.correctAnswer || !question.options.includes(question.correctAnswer)) {
-      const error = new Error("Each question must have a valid correct answer");
-      error.statusCode = 400;
-      throw error;
-    }
+  try {
+    questions.forEach(validateQuestion);
+  } catch (err) {
+    return res.status(400).json({ success: false, message: err.message });
   }
 
   const quiz = await Quiz.create({ title, category, questions });
@@ -69,38 +76,25 @@ export const updateQuiz = asyncHandler(async (req, res) => {
   const quiz = await Quiz.findById(req.params.id);
 
   if (!quiz) {
-    const error = new Error("Quiz not found");
-    error.statusCode = 404;
-    throw error;
+    return res.status(404).json({ success: false, message: "Quiz not found" });
   }
 
   const { title, category, questions } = req.body;
 
-  // Only update if fields are provided
   if (title) quiz.title = title;
   if (category) quiz.category = category;
 
-  // Validate questions
   if (Array.isArray(questions)) {
-    for (const question of questions) {
-      if (!question.text || !Array.isArray(question.options) || question.options.length < 2) {
-        const error = new Error("Each question must have text and at least two options");
-        error.statusCode = 400;
-        throw error;
-      }
-
-      if (!question.correctAnswer || !question.options.includes(question.correctAnswer)) {
-        const error = new Error("Each question must have a valid correct answer");
-        error.statusCode = 400;
-        throw error;
-      }
+    try {
+      questions.forEach(validateQuestion);
+    } catch (err) {
+      return res.status(400).json({ success: false, message: err.message });
     }
 
     quiz.questions = questions;
   }
 
   const updatedQuiz = await quiz.save();
-
   res.json({ success: true, quiz: updatedQuiz });
 });
 
@@ -109,9 +103,7 @@ export const deleteQuiz = asyncHandler(async (req, res) => {
   const quiz = await Quiz.findById(req.params.id);
 
   if (!quiz) {
-    const error = new Error("Quiz not found");
-    error.statusCode = 404;
-    throw error;
+    return res.status(404).json({ success: false, message: "Quiz not found" });
   }
 
   await quiz.deleteOne();
