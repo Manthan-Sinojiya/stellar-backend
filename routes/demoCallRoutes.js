@@ -98,4 +98,21 @@ router.delete(
   })
 );
 
+router.put(
+  "/status/:id",
+  asyncHandler(async (req, res) => {
+    const updated = await DemoCall.findByIdAndUpdate(
+      req.params.id,
+      { status: req.body.status },
+      { new: true }
+    );
+
+    if (!updated) {
+      res.status(404);
+      throw new Error("Entry not found");
+    }
+
+    res.status(200).json({ message: "Status updated", data: updated });
+  })
+);
 export default router;
