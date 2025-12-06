@@ -1,4 +1,3 @@
-// routes/quizRoutes.js
 import express from "express";
 import {
   getQuizzes,
@@ -6,25 +5,25 @@ import {
   createQuiz,
   updateQuiz,
   deleteQuiz,
-  togglePublishQuiz,
+  togglePublishQuiz
 } from "../controllers/quizController.js";
 
-import { protect, admin } from "../middleware/authMiddleware.js";
+import { protect, adminOnly } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// Public for listing (but only published for students)
+// 🔐 Anyone with token can list quizzes (students see only published)
 router.get("/", protect, getQuizzes);
 
-// Single quiz
+// 🔐 Anyone with token can view a quiz (if published or admin)
 router.get("/:id", protect, getQuiz);
 
-// Admin-only routes
-router.post("/", protect, admin, createQuiz);
-router.put("/:id", protect, admin, updateQuiz);
-router.delete("/:id", protect, admin, deleteQuiz);
+// 🔐 Admin Only
+router.post("/", protect, adminOnly, createQuiz);
+router.put("/:id", protect, adminOnly, updateQuiz);
+router.delete("/:id", protect, adminOnly, deleteQuiz);
 
-// Publish / Unpublish
-router.patch("/:id/publish-toggle", protect, admin, togglePublishQuiz);
+// 🔐 Publish & Unpublish
+router.patch("/:id/publish-toggle", protect, adminOnly, togglePublishQuiz);
 
 export default router;
