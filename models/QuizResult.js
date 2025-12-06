@@ -28,32 +28,35 @@
 
 import mongoose from "mongoose";
 
-const QuestionSchema = new mongoose.Schema({
-  question: { type: String, required: true },
-  type: { type: String, enum: ["mcq", "checkbox", "text"], required: true },
-  options: { type: [String], default: [] },
-  answer: { type: mongoose.Schema.Types.Mixed, required: true }
+const answerSchema = new mongoose.Schema({
+  questionId: Number,
+  selectedIndex: Number,
+  correctIndex: Number,
 });
 
-const QuizSchema = new mongoose.Schema(
+const quizResultSchema = new mongoose.Schema(
   {
-    title: { type: String, required: true },
-
-    category: {
-      type: String,
-      enum: ["Entrance Test", "Scholarship Quiz", "Other"],
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
       required: true,
     },
 
-    questions: [QuestionSchema],
-
-    // ⭐ NEW FIELD
-    isPublished: {
-      type: Boolean,
-      default: false, // Admin must publish manually to make quiz visible
+    quizId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Quiz",
+      required: true,
     },
+
+    score: Number,
+    percentage: Number,
+    totalMarks: Number,
+    attempted: Number,
+    answers: [answerSchema],
   },
   { timestamps: true }
 );
 
-export default mongoose.model("Quiz", QuizSchema);
+// ✅ FIX: model name must be "QuizResult", NOT "Quiz"
+export default mongoose.models.QuizResult ||
+  mongoose.model("QuizResult", quizResultSchema);
