@@ -61,7 +61,7 @@ app.use(cors({
   // Ensure all allowed origins are listed
   origin: ["http://localhost:5173", "https://stellarcampus.com"],
   // Ensure the OPTIONS method is allowed for preflight requests
-  methods: ["GET", "POST", "OPTIONS"], 
+  methods: ["GET", "POST", "OPTIONS","PUT", "DELETE"], 
   allowedHeaders: ["Content-Type", "Authorization"],
 }));
 // ---------------------------------------------------
