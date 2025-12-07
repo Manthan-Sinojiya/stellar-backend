@@ -1,25 +1,43 @@
-// controllers/quizController.js
+// controllers/quizresultController.js
+/**
+ * Handles saving quiz results and basic result-related operations
+ * - saveQuizResult: stores a student's attempt
+ *
+ * Important:
+ * - This controller expects req.user to exist (protect middleware)
+ * - We store userId + quizId + summary fields + answers
+ * - No sensitive information from user is stored here
+ */
+
 import asyncHandler from "express-async-handler";
 import QuizResult from "../models/QuizResult.js";
-import User from "../models/User.js";
 
-// SAVE RESULT
+// POST /api/quizresult/submit
 export const saveQuizResult = asyncHandler(async (req, res) => {
-  const userId = req.user.id;
+  // req.user is injected by protect middleware
+  const userId = req.user?.id;
+  if (!userId) {
+    res.status(401);
+    throw new Error("Unauthorized");
+  }
 
-  const user = await User.findById(userId).select("fullName email contactNumber");
+  // Validate required payload (simple checks; more validation can be added)
+  const { quizId, score, percentage, attempted, totalMarks, answers } = req.body;
+  if (!quizId) {
+    res.status(400);
+    throw new Error("quizId is required");
+  }
 
+  // Create result document
   const result = await QuizResult.create({
     userId,
-    fullName: user.fullName,
-    email: user.email,
-    contactNumber: user.contactNumber,
-    score: req.body.score,
-    percentage: req.body.percentage,
-    attempted: req.body.attempted,
-    totalMarks: req.body.totalMarks,
-    answers: req.body.answers,
+    quizId,
+    score,
+    percentage,
+    attempted,
+    totalMarks,
+    answers,
   });
 
-  res.json({ message: "Saved", result });
+  res.json({ success: true, message: "Saved", result });
 });
