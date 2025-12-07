@@ -1,3 +1,10 @@
+// routes/quizRoutes.js
+/**
+ * Quiz routes
+ * - Most routes are protected so we know user's role (so getQuizzes can filter)
+ * - Admin-only endpoints use adminOnly middleware
+ */
+
 import express from "express";
 import {
   getQuizzes,
@@ -5,25 +12,25 @@ import {
   createQuiz,
   updateQuiz,
   deleteQuiz,
-  togglePublishQuiz
+  togglePublishQuiz,
 } from "../controllers/quizController.js";
-
 import { protect, adminOnly } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// 🔐 Anyone with token can list quizzes (students see only published)
+// List quizzes (protected so server can know if requester is admin)
+// Query params: page, limit, search, sort
 router.get("/", protect, getQuizzes);
 
-// 🔐 Anyone with token can view a quiz (if published or admin)
+// Get a single quiz (protect to enforce unpublished hiding)
 router.get("/:id", protect, getQuiz);
 
-// 🔐 Admin Only
+// Admin-only CRUD
 router.post("/", protect, adminOnly, createQuiz);
 router.put("/:id", protect, adminOnly, updateQuiz);
 router.delete("/:id", protect, adminOnly, deleteQuiz);
 
-// 🔐 Publish & Unpublish
+// Publish/unpublish toggle (admin only)
 router.patch("/:id/publish-toggle", protect, adminOnly, togglePublishQuiz);
 
 export default router;
