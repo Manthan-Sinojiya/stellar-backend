@@ -34,7 +34,7 @@ router.get(
   "/results",
   asyncHandler(async (req, res) => {
     const results = await QuizResult.find()
-      .populate("userId", "fullName email contactNumber")
+      .populate("userId", "fullName email mobile")
       .sort({ createdAt: -1 });
 
     // If no results found, throw an error (handled by asyncHandler)
