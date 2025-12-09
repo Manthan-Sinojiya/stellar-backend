@@ -46,7 +46,8 @@ import userRoutes from "./routes/userRoutes.js";
 import demoCallRoutes from "./routes/demoCallRoutes.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import recaptchaRoutes from "./routes/recaptchaRoutes.js";
-import fs from "fs"; // Still needed if you use other fs operations, but not for recaptcha anymore
+import "./config/passport.js";
+import passport from "passport";
 
 // NOTE: The previous logic for GOOGLE_APPLICATION_CREDENTIALS is REMOVED 
 // as it caused errors. We now handle credentials directly in recaptchaRoutes.js.
@@ -65,7 +66,7 @@ app.use(cors({
   allowedHeaders: ["Content-Type", "Authorization"],
 }));
 // ---------------------------------------------------
-
+app.use(passport.initialize());
 app.use(express.json());
 
 // ROUTES
