@@ -75,7 +75,6 @@ export const googleLogin = asyncHandler(async (req, res) => {
 
   let user = await User.findOne({ email });
 
-  // If new Google user → create account
   if (!user) {
     user = await User.create({
       fullName: name,
@@ -83,12 +82,11 @@ export const googleLogin = asyncHandler(async (req, res) => {
       email,
       mobile: "",
       googleId,
-      password: "", // no password for Google users
+      password: "",
       role: "user",
     });
   }
 
-  // Generate JWT token
   const token = jwt.sign(
     { id: user._id, role: user.role },
     process.env.JWT_SECRET,
@@ -101,3 +99,4 @@ export const googleLogin = asyncHandler(async (req, res) => {
     role: user.role,
   });
 });
+
