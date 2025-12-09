@@ -35,15 +35,16 @@ router.get(
   "/google/callback",
   passport.authenticate("google", { failureRedirect: "http://localhost:5173/#/login" }),
   (req, res) => {
+
     const token = jwt.sign(
       { id: req.user._id, role: req.user.role },
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
 
-    // Redirect back to frontend with token
     res.redirect(`http://localhost:5173/#/google-success?token=${token}`);
   }
 );
+
 
 export default router;
