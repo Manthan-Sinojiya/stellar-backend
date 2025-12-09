@@ -1,47 +1,35 @@
 // routes/quizresultRoutes.js
 /**
- * QuizResult API
- * - Submit result (students)
- * - Admin: list all results / edit / delete
- * - Students: view their own results
- *
- * All endpoints are protected except where noted.
+ * Quiz Result Routes
+ * Includes:
+ * - Submit quiz attempt (student)
+ * - View own quiz result (student)
+ * - View all results (admin)
+ * - Update / delete results (admin)
  */
 
 import express from "express";
 import asyncHandler from "express-async-handler";
 import { protect, adminOnly } from "../middleware/authMiddleware.js";
-import { saveQuizResult } from "../controllers/quizresultController.js";
+import { submitQuizResult } from "../controllers/quizresultController.js";
 import QuizResult from "../models/QuizResult.js";
-import { quizValidation } from "../validators/allValidations.js";
-import { validate } from "../middleware/validationHandler.js"; // your validation handler wrapper
 
 const router = express.Router();
 
-// 1) Student submits result
-router.post("/submit", protect, quizValidation, validate, saveQuizResult);
-
-// 2) Admin: get all results (adminOnly to ensure only staff can access student data)
-router.get(
-  "/results",
+/**
+ * 1️⃣ POST /submit
+ * Student submits quiz → backend validates and saves
+ */
+router.post(
+  "/submit",
   protect,
-  adminOnly,
-  asyncHandler(async (req, res) => {
-    const results = await QuizResult.find()
-      .populate("userId", "fullName email mobile") // populate user minimal info
-      .populate("quizId", "title category") // optional: include quiz title
-      .sort({ createdAt: -1 });
-
-    if (!results || results.length === 0) {
-      res.status(404);
-      throw new Error("No quiz results found");
-    }
-
-    res.json({ success: true, results });
-  })
+  asyncHandler(submitQuizResult) // fully evaluated here
 );
 
-// 3) Student: get their result for a specific quiz
+/**
+ * 2️⃣ GET /my/:quizId
+ * Student fetches their own result for a specific quiz
+ */
 router.get(
   "/my/:quizId",
   protect,
@@ -52,64 +40,80 @@ router.get(
     });
 
     if (!result) {
-      res.status(404);
-      throw new Error("No quiz result found for this quiz");
+      return res.status(404).json({
+        success: false,
+        message: "No result found for this quiz",
+      });
     }
 
     res.json({ success: true, result });
   })
 );
 
-// 4) Student: list all their attempts
+/**
+ * 3️⃣ GET /my-results
+ * Student fetches all their quiz attempts
+ */
 router.get(
   "/my-results",
   protect,
   asyncHandler(async (req, res) => {
-    const results = await QuizResult.find({ userId: req.user.id }).sort({ createdAt: -1 });
-
-    if (!results || results.length === 0) {
-      res.status(404);
-      throw new Error("You have not attempted any quizzes yet");
-    }
+    const results = await QuizResult.find({ userId: req.user.id }).sort({
+      createdAt: -1,
+    });
 
     res.json({ success: true, results });
   })
 );
 
-// 5) Admin: update a result (rare but sometimes needed)
+/**
+ * 4️⃣ GET /results (Admin Only)
+ * Admin sees all quiz attempts from all students
+ */
+router.get(
+  "/results",
+  protect,
+  adminOnly,
+  asyncHandler(async (req, res) => {
+    const results = await QuizResult.find()
+      .populate("userId", "fullName email mobile")
+      .populate("quizId", "title category")
+      .sort({ createdAt: -1 });
+
+    res.json({ success: true, results });
+  })
+);
+
+/**
+ * 5️⃣ PUT /results/:id (Admin Only)
+ * Admin updates a quiz result manually
+ */
 router.put(
   "/results/:id",
   protect,
   adminOnly,
   asyncHandler(async (req, res) => {
-    const { score, percentage, attempted, totalMarks } = req.body;
-
     const updated = await QuizResult.findByIdAndUpdate(
       req.params.id,
-      { score, percentage, attempted, totalMarks },
+      req.body,
       { new: true }
     );
 
-    if (!updated) {
-      res.status(404);
-      throw new Error("Quiz result not found");
-    }
-
-    res.json({ success: true, message: "Quiz result updated", updated });
+    res.json({ success: true, updated });
   })
 );
 
-// 6) Admin: delete a result
+/**
+ * 6️⃣ DELETE /results/:id (Admin Only)
+ * Admin deletes a quiz result
+ */
 router.delete(
   "/results/:id",
   protect,
   adminOnly,
   asyncHandler(async (req, res) => {
-    const removed = await QuizResult.findByIdAndDelete(req.params.id);
-    if (!removed) {
-      res.status(404);
-      throw new Error("Quiz result not found");
-    }
+    await QuizResult.findByIdAndDelete(req.params.id);
+
     res.json({ success: true, message: "Quiz result deleted" });
   })
 );
