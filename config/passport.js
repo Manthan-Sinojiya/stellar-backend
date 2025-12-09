@@ -1,9 +1,6 @@
 import passport from "passport";
-import { Strategy as GoogleStrategy } from "passport-google-oauth20";
+import GoogleStrategy from "passport-google-oauth20";
 import User from "../models/User.js";
-import jwt from "jsonwebtoken";
-import dotenv from "dotenv";
-dotenv.config();
 
 passport.use(
   new GoogleStrategy(
@@ -14,30 +11,19 @@ passport.use(
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
-        const email = profile.emails?.[0]?.value;
-        if (!email) return done(new Error("No email from Google"), null);
-
-        let user = await User.findOne({ email });
+        let user = await User.findOne({ email: profile.emails[0].value });
 
         if (!user) {
           user = await User.create({
-            fullName: profile.displayName || email,
-            email,
-            password: "", // not used for Google accounts
-            mobile: "",
-            isVerified: true,
+            fullName: profile.displayName,
+            email: profile.emails[0].value,
+            password: "",
             role: "user",
+            isVerified: true,
           });
         }
 
-        const token = jwt.sign(
-          { id: user._id, role: user.role },
-          process.env.JWT_SECRET,
-          { expiresIn: "7d" }
-        );
-
-        // Pass an object containing token and user
-        return done(null, { token, user });
+        return done(null, user);
       } catch (err) {
         return done(err, null);
       }
@@ -45,5 +31,11 @@ passport.use(
   )
 );
 
-passport.serializeUser((data, done) => done(null, data));
-passport.deserializeUser((obj, done) => done(null, obj));
+passport.serializeUser(function (user, done) {
+  done(null, user.id);
+});
+
+passport.deserializeUser(async function (id, done) {
+  const user = await User.findById(id);
+  done(null, user);
+});

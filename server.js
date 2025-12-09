@@ -48,6 +48,7 @@ import { errorHandler } from "./middleware/errorHandler.js";
 import recaptchaRoutes from "./routes/recaptchaRoutes.js";
 import "./config/passport.js";
 import passport from "passport";
+import session from "express-session";
 
 // NOTE: The previous logic for GOOGLE_APPLICATION_CREDENTIALS is REMOVED 
 // as it caused errors. We now handle credentials directly in recaptchaRoutes.js.
@@ -65,8 +66,18 @@ app.use(cors({
   methods: ["GET", "HEAD", "POST", "OPTIONS", "PUT", "PATCH", "DELETE"], 
   allowedHeaders: ["Content-Type", "Authorization"],
 }));
+
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || "secret123",
+    resave: false,
+    saveUninitialized: true,
+  })
+);
 // ---------------------------------------------------
 app.use(passport.initialize());
+app.use(passport.session());
+
 app.use(express.json());
 
 // ROUTES

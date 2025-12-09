@@ -21,31 +21,28 @@
 
 import express from "express";
 import passport from "passport";
-import { registerUser, loginUser } from "../controllers/authController.js";
+import jwt from "jsonwebtoken";
 
 const router = express.Router();
 
-// Traditional auth
-router.post("/register", registerUser);
-router.post("/login", loginUser);
-
-// Google OAuth entry
-router.get(
-  "/google",
-  passport.authenticate("google", { scope: ["profile", "email"] })
+// STEP 1 - Redirect user to Google
+router.get('/google',
+  passport.authenticate('google', { scope: ['profile', 'email'] })
 );
 
-// Google callback
+// STEP 2 - Google redirects back
 router.get(
   "/google/callback",
-  passport.authenticate("google", { session: false }),
+  passport.authenticate("google", { failureRedirect: "http://localhost:5173/#/login" }),
   (req, res) => {
-    // req.user comes from passport verify callback
-    const { token, user } = req.user || {};
-    const frontend = process.env.FRONTEND_URL || "http://localhost:5173";
+    const token = jwt.sign(
+      { id: req.user._id, role: req.user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
 
-    // redirect to frontend and pass token & role as query params
-    return res.redirect(`${frontend}/#/oauth-success?token=${token}&role=${user?.role}`);
+    // Redirect back to frontend with token
+    res.redirect(`http://localhost:5173/#/google-success?token=${token}`);
   }
 );
 
