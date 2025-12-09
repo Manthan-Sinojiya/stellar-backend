@@ -4,7 +4,9 @@ import User from "../models/User.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
+// --------------------------------------------------
 // REGISTER USER
+// --------------------------------------------------
 export const registerUser = asyncHandler(async (req, res) => {
   const { fullName, fatherName, email, mobile, password, role } = req.body;
 
@@ -28,12 +30,14 @@ export const registerUser = asyncHandler(async (req, res) => {
   res.json({ message: "Registered Successfully", user });
 });
 
+// --------------------------------------------------
 // LOGIN USER
+// --------------------------------------------------
 export const loginUser = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
   const user = await User.findOne({ email });
-  
+
   if (!user) {
     res.status(400);
     throw new Error("User not found");
@@ -53,6 +57,46 @@ export const loginUser = asyncHandler(async (req, res) => {
 
   res.json({
     message: "Login successful",
+    token,
+    role: user.role,
+  });
+});
+
+// --------------------------------------------------
+// ⭐ GOOGLE LOGIN CONTROLLER
+// --------------------------------------------------
+export const googleLogin = asyncHandler(async (req, res) => {
+  const { email, name, googleId } = req.body;
+
+  if (!email || !googleId) {
+    res.status(400);
+    throw new Error("Invalid Google login data");
+  }
+
+  let user = await User.findOne({ email });
+
+  // If new Google user → create account
+  if (!user) {
+    user = await User.create({
+      fullName: name,
+      fatherName: "",
+      email,
+      mobile: "",
+      googleId,
+      password: "", // no password for Google users
+      role: "user",
+    });
+  }
+
+  // Generate JWT token
+  const token = jwt.sign(
+    { id: user._id, role: user.role },
+    process.env.JWT_SECRET,
+    { expiresIn: "7d" }
+  );
+
+  res.json({
+    message: "Google login success",
     token,
     role: user.role,
   });
