@@ -119,30 +119,84 @@ export const loginUser = asyncHandler(async (req, res) => {
   });
 });
 
+// // ---------------- GOOGLE LOGIN ----------------
+// export const googleAuth = asyncHandler(async (req, res) => {
+//   const { code } = req.body;
+
+//   if (!code) {
+//     return res.status(400).json({ message: "Authorization code missing" });
+//   }
+
+//   try {
+//     // STEP 1: Exchange CODE for tokens
+//     const { tokens } = await oauth2Client.getToken(code);
+//     oauth2Client.setCredentials(tokens);
+
+//     // STEP 2: Get Google Profile
+//     const googleUser = await axios.get(
+//       `https://www.googleapis.com/oauth2/v1/userinfo?alt=json&access_token=${tokens.access_token}`
+//     );
+
+//     const { email, name, picture } = googleUser.data;
+
+//     // STEP 3: Check if user exists
+//     let user = await User.findOne({ email });
+
+//     // STEP 4: Create if not exists
+//     if (!user) {
+//       user = await User.create({
+//         fullName: name,
+//         email,
+//         image: picture,
+//         role: "user",
+//       });
+//     }
+
+//     // STEP 5: Generate JWT
+//     const token = jwt.sign(
+//       { id: user._id, role: user.role },
+//       process.env.JWT_SECRET,
+//       { expiresIn: "7d" }
+//     );
+
+//     return res.json({
+//       message: "Google Login Successful",
+//       token,
+//       user,
+//     });
+//   } catch (err) {
+//     console.error("GOOGLE LOGIN ERROR:", err.response?.data || err);
+//     res.status(500).json({
+//       message: "Google Authentication Failed",
+//       error: err.message,
+//     });
+//   }
+// });
+
 // ---------------- GOOGLE LOGIN ----------------
 export const googleAuth = asyncHandler(async (req, res) => {
   const { code } = req.body;
+
+  console.log("📥 CODE RECEIVED:", code);
 
   if (!code) {
     return res.status(400).json({ message: "Authorization code missing" });
   }
 
   try {
-    // STEP 1: Exchange CODE for tokens
+    // EXCHANGE CODE → TOKENS
     const { tokens } = await oauth2Client.getToken(code);
     oauth2Client.setCredentials(tokens);
 
-    // STEP 2: Get Google Profile
+    // GET USER INFO
     const googleUser = await axios.get(
       `https://www.googleapis.com/oauth2/v1/userinfo?alt=json&access_token=${tokens.access_token}`
     );
 
     const { email, name, picture } = googleUser.data;
 
-    // STEP 3: Check if user exists
     let user = await User.findOne({ email });
 
-    // STEP 4: Create if not exists
     if (!user) {
       user = await User.create({
         fullName: name,
@@ -152,7 +206,6 @@ export const googleAuth = asyncHandler(async (req, res) => {
       });
     }
 
-    // STEP 5: Generate JWT
     const token = jwt.sign(
       { id: user._id, role: user.role },
       process.env.JWT_SECRET,
@@ -164,11 +217,13 @@ export const googleAuth = asyncHandler(async (req, res) => {
       token,
       user,
     });
+
   } catch (err) {
-    console.error("GOOGLE LOGIN ERROR:", err.response?.data || err);
-    res.status(500).json({
+    console.error("❌ GOOGLE LOGIN ERROR:", err?.response?.data || err?.message || err);
+
+    return res.status(500).json({
       message: "Google Authentication Failed",
-      error: err.message,
+      error: err?.response?.data || err?.message || "Unknown error"
     });
   }
 });
