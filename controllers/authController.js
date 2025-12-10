@@ -65,7 +65,7 @@ import jwt from "jsonwebtoken";
 import axios from "axios";
 import { oauth2Client } from "../utils/googleClient.js";
 
-// REGISTER USER
+// ---------------- REGISTER ----------------
 export const registerUser = asyncHandler(async (req, res) => {
   const { fullName, fatherName, email, mobile, password, role } = req.body;
 
@@ -89,7 +89,7 @@ export const registerUser = asyncHandler(async (req, res) => {
   res.json({ message: "Registered Successfully", user });
 });
 
-// LOGIN USER
+// ---------------- LOGIN ----------------
 export const loginUser = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
@@ -119,27 +119,30 @@ export const loginUser = asyncHandler(async (req, res) => {
   });
 });
 
-// GOOGLE LOGIN
+// ---------------- GOOGLE LOGIN ----------------
 export const googleAuth = asyncHandler(async (req, res) => {
   const { code } = req.body;
 
   if (!code) {
-    res.status(400);
-    throw new Error("Authorization code missing");
+    return res.status(400).json({ message: "Authorization code missing" });
   }
 
   try {
+    // STEP 1: Exchange CODE for tokens
     const { tokens } = await oauth2Client.getToken(code);
     oauth2Client.setCredentials(tokens);
 
+    // STEP 2: Get Google Profile
     const googleUser = await axios.get(
       `https://www.googleapis.com/oauth2/v1/userinfo?alt=json&access_token=${tokens.access_token}`
     );
 
     const { email, name, picture } = googleUser.data;
 
+    // STEP 3: Check if user exists
     let user = await User.findOne({ email });
 
+    // STEP 4: Create if not exists
     if (!user) {
       user = await User.create({
         fullName: name,
@@ -149,6 +152,7 @@ export const googleAuth = asyncHandler(async (req, res) => {
       });
     }
 
+    // STEP 5: Generate JWT
     const token = jwt.sign(
       { id: user._id, role: user.role },
       process.env.JWT_SECRET,
@@ -161,7 +165,10 @@ export const googleAuth = asyncHandler(async (req, res) => {
       user,
     });
   } catch (err) {
-    res.status(500);
-    throw new Error("Google Authentication Failed");
+    console.error("GOOGLE LOGIN ERROR:", err.response?.data || err);
+    res.status(500).json({
+      message: "Google Authentication Failed",
+      error: err.message,
+    });
   }
 });
