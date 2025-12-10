@@ -59,14 +59,24 @@ connectDB();
 const app = express();
 
 // --- CRITICAL CORS CONFIGURATION (MUST BE FIRST) ---
-app.use(cors({
-  // Ensure all allowed origins are listed
-  origin: ["http://localhost:5173", "https://stellarcampus.com"],
-  // Ensure the OPTIONS method is allowed for preflight requests
-  methods: ["GET", "HEAD", "POST", "OPTIONS", "PUT", "PATCH", "DELETE"], 
-  allowedHeaders: ["Content-Type", "Authorization"],
-}));
-
+// app.use(cors({
+//   // Ensure all allowed origins are listed
+//   origin: ["http://localhost:5173", "https://stellarcampus.com"],
+//   // Ensure the OPTIONS method is allowed for preflight requests
+//   methods: ["GET", "HEAD", "POST", "OPTIONS", "PUT", "PATCH", "DELETE"], 
+//   allowedHeaders: ["Content-Type", "Authorization"],
+// }));
+app.use(
+  cors({
+    origin: [
+      process.env.FRONTEND_URL,
+      process.env.LOCAL_FRONTEND,
+      "http://localhost:5173"
+    ],
+    methods: "GET,POST,PUT,DELETE,PATCH,OPTIONS",
+    credentials: true,
+  })
+);
 app.use(
   session({
     secret: process.env.SESSION_SECRET || "secret123",

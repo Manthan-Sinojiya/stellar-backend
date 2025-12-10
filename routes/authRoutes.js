@@ -25,26 +25,31 @@ import jwt from "jsonwebtoken";
 
 const router = express.Router();
 
-// STEP 1 - Redirect user to Google
-router.get('/google',
-  passport.authenticate('google', { scope: ['profile', 'email'] })
+// START GOOGLE LOGIN
+router.get(
+  "/google",
+  passport.authenticate("google", { scope: ["profile", "email"] })
 );
 
-// STEP 2 - Google redirects back
+// GOOGLE CALLBACK
 router.get(
   "/google/callback",
-  passport.authenticate("google", { failureRedirect: "http://localhost:5173/#/login" }),
+  passport.authenticate("google", {
+    failureRedirect: `${process.env.FRONTEND_URL}/#/login`,
+    session: false,
+  }),
   (req, res) => {
-
     const token = jwt.sign(
       { id: req.user._id, role: req.user.role },
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
 
-    res.redirect(`http://localhost:5173/#/google-success?token=${token}`);
+    // Frontend redirection after successful login
+    const redirectURL = `${process.env.FRONTEND_URL}/#/google-success?token=${token}&role=${req.user.role}`;
+
+    return res.redirect(redirectURL);
   }
 );
-
 
 export default router;
