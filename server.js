@@ -46,9 +46,6 @@ import userRoutes from "./routes/userRoutes.js";
 import demoCallRoutes from "./routes/demoCallRoutes.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import recaptchaRoutes from "./routes/recaptchaRoutes.js";
-import "./config/passport.js";
-import passport from "passport";
-import session from "express-session";
 import firebaseGoogleRoutes from "./routes/authRoutes.js";
 
 // NOTE: The previous logic for GOOGLE_APPLICATION_CREDENTIALS is REMOVED 
@@ -76,8 +73,6 @@ app.use(
   })
 );
 // ---------------------------------------------------
-app.use(passport.initialize());
-app.use(passport.session());
 
 app.use(express.json());
 
