@@ -64,14 +64,6 @@ app.use(cors({
   methods: ["GET", "HEAD", "POST", "OPTIONS", "PUT", "PATCH", "DELETE"], 
   allowedHeaders: ["Content-Type", "Authorization"],
 }));
-
-app.use(
-  session({
-    secret: process.env.SESSION_SECRET || "secret123",
-    resave: false,
-    saveUninitialized: true,
-  })
-);
 // ---------------------------------------------------
 
 app.use(express.json());
