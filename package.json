@@ -60,6 +60,7 @@
     "file-entry-cache": "^8.0.0",
     "fill-range": "^7.1.1",
     "find-up": "^5.0.0",
+    "firebase-admin": "^13.6.0",
     "flat-cache": "^4.0.1",
     "flatted": "^3.3.3",
     "framer-motion": "^12.23.16",
