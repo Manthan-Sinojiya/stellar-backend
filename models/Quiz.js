@@ -1,47 +1,57 @@
-// models/Quiz.js
 /**
- * Quiz model
+ * ------------------------------------------------------------------
+ * Quiz Model
+ * ------------------------------------------------------------------
+ * Responsibilities:
  * - Stores quiz metadata (title, category, publish flag)
- * - Contains an array of questions (embedded subdocuments)
+ * - Contains embedded questions
  *
- * Note: Use mongoose.models.ModelName || mongoose.model(...) pattern
- * to avoid OverwriteModelError when hot-reloading or running tests.
+ * Question Structure:
+ * - question: question text
+ * - type: "mcq" | "checkbox" | "text"
+ * - options: required for mcq/checkbox; ignored for text
+ * - answer:
+ *     - mcq → String
+ *     - checkbox → Array of strings
+ *     - text → String
+ *
+ * Best Practices:
+ * - Embedded schema ensures atomic quiz updates
+ * - Published flag ensures only admin controls visibility
+ * - mongoose.models guard prevents OverwriteModelError during hot reload
+ * ------------------------------------------------------------------
  */
 
 import mongoose from "mongoose";
 
-// Single question schema (embedded)
+// Embedded question schema
 const QuestionSchema = new mongoose.Schema({
-  question: { type: String, required: true }, // question text
-  type: { type: String, enum: ["mcq", "checkbox", "text"], required: true }, // type of question
-  options: { type: [String], default: [] }, // for mcq/checkbox
-  // answer stored as:
-  // - string for "mcq" (option string)
-  // - array of strings for "checkbox"
-  // - string for "text"
-  answer: { type: mongoose.Schema.Types.Mixed, required: true },
+  question: { type: String, required: true },
+  type: { type: String, enum: ["mcq", "checkbox", "text"], required: true },
+  options: { type: [String], default: [] }, // MCQ / checkbox options
+  answer: { type: mongoose.Schema.Types.Mixed, required: true }, // flexible type
 });
 
-// Main Quiz schema
+// Main quiz schema
 const QuizSchema = new mongoose.Schema(
   {
-    title: { type: String, required: true }, // quiz title
+    title: { type: String, required: true },
+
+    // Very controlled categories to avoid clutter
     category: {
       type: String,
       enum: ["Entrance Test", "Scholarship Quiz", "Other"],
       required: true,
     },
 
-    // Publish flag:
-    // - Admin sets this to true to make quiz visible to non-admin users
-    // - Default false to prevent accidental exposure
+    // Controls visibility to students
     isPublished: { type: Boolean, default: false },
 
-    // Embedded questions
+    // Array of questions
     questions: [QuestionSchema],
   },
-  { timestamps: true } // createdAt and updatedAt
+  { timestamps: true }
 );
 
-// Exporting safely to prevent model overwrite in dev environment
+// Safe export to avoid OverwriteModelError
 export default mongoose.models.Quiz || mongoose.model("Quiz", QuizSchema);

@@ -1,11 +1,19 @@
-// routes/quizresultRoutes.js
 /**
- * Quiz Result Routes
- * Includes:
- * - Submit quiz attempt (student)
- * - View own quiz result (student)
- * - View all results (admin)
- * - Update / delete results (admin)
+ * ------------------------------------------------------------------
+ * QUIZ RESULT ROUTES
+ * ------------------------------------------------------------------
+ * Endpoints:
+ * - POST /submit           → Submit quiz answers (Student)
+ * - GET  /my/:quizId       → Fetch user's result for a quiz
+ * - GET  /my-results       → Fetch all quiz attempts by user
+ * - GET  /results          → Admin: view all quiz results
+ * - PUT  /results/:id      → Admin: update quiz result
+ * - DELETE /results/:id    → Admin: delete quiz result
+ *
+ * Notes:
+ * - protect middleware ensures user identity
+ * - adminOnly restricts management features
+ * ------------------------------------------------------------------
  */
 
 import express from "express";
@@ -16,20 +24,14 @@ import QuizResult from "../models/QuizResult.js";
 
 const router = express.Router();
 
-/**
- * 1️⃣ POST /submit
- * Student submits quiz → backend validates and saves
- */
-router.post(
-  "/submit",
-  protect,
-  asyncHandler(submitQuizResult) // fully evaluated here
-);
+/* ------------------------------------------------------------------
+   Submit Quiz Attempt → Evaluated in backend
+------------------------------------------------------------------ */
+router.post("/submit", protect, asyncHandler(submitQuizResult));
 
-/**
- * 2️⃣ GET /my/:quizId
- * Student fetches their own result for a specific quiz
- */
+/* ------------------------------------------------------------------
+   Fetch Specific Result for a Single Quiz (Own Attempts Only)
+------------------------------------------------------------------ */
 router.get(
   "/my/:quizId",
   protect,
@@ -50,10 +52,9 @@ router.get(
   })
 );
 
-/**
- * 3️⃣ GET /my-results
- * Student fetches all their quiz attempts
- */
+/* ------------------------------------------------------------------
+   Fetch All Quiz Attempts of Logged-in User
+------------------------------------------------------------------ */
 router.get(
   "/my-results",
   protect,
@@ -66,10 +67,9 @@ router.get(
   })
 );
 
-/**
- * 4️⃣ GET /results (Admin Only)
- * Admin sees all quiz attempts from all students
- */
+/* ------------------------------------------------------------------
+   Admin: View All Quiz Results
+------------------------------------------------------------------ */
 router.get(
   "/results",
   protect,
@@ -84,10 +84,9 @@ router.get(
   })
 );
 
-/**
- * 5️⃣ PUT /results/:id (Admin Only)
- * Admin updates a quiz result manually
- */
+/* ------------------------------------------------------------------
+   Admin: Update Quiz Result Manually
+------------------------------------------------------------------ */
 router.put(
   "/results/:id",
   protect,
@@ -103,10 +102,9 @@ router.put(
   })
 );
 
-/**
- * 6️⃣ DELETE /results/:id (Admin Only)
- * Admin deletes a quiz result
- */
+/* ------------------------------------------------------------------
+   Admin: Delete Quiz Result
+------------------------------------------------------------------ */
 router.delete(
   "/results/:id",
   protect,

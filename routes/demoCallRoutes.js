@@ -1,118 +1,47 @@
+/**
+ * ------------------------------------------------------------------
+ * DEMO CALL & OTP ROUTES
+ * ------------------------------------------------------------------
+ * Endpoints:
+ *  🔹 POST /send-otp        → Send OTP via MSG91
+ *  🔹 POST /verify-otp      → Verify OTP via MSG91
+ *
+ *  🔹 POST /book            → Create demo call request
+ *  🔹 GET  /all             → Admin: fetch all demo call entries
+ *  🔹 DELETE /:id           → Delete demo call entry
+ *  🔹 PUT /status/:id       → Update demo call follow-up status
+ *
+ * Notes:
+ * - asyncHandler ensures thrown errors go to global handler
+ * - Controller functions contain logic; routes stay clean
+ * ------------------------------------------------------------------
+ */
+
 import express from "express";
 import asyncHandler from "express-async-handler";
-import DemoCall from "../models/DemoCall.js";
-// import { sendOtpMsg91, verifyOtpMsg91 } from "../services/msg91Service.js";
+import {
+  sendOtp,
+  verifyOtp,
+  bookDemoCall,
+  getAllDemoCalls,
+  deleteDemoCall,
+  updateDemoCallStatus,
+} from "../controllers/demoCallController.js";
 
 const router = express.Router();
 
-// SEND OTP
-// router.post(
-//   "/send-otp",
-//   asyncHandler(async (req, res) => {
-//     await sendOtpMsg91(req.body.mobile);
+/* ------------------------------------------------------------------
+   OTP Routes
+------------------------------------------------------------------ */
+router.post("/send-otp", asyncHandler(sendOtp));
+router.post("/verify-otp", asyncHandler(verifyOtp));
 
-//     res.status(200).json({
-//       message: "OTP sent successfully",
-//     });
-//   })
-// );
+/* ------------------------------------------------------------------
+   Demo Call Routes
+------------------------------------------------------------------ */
+router.post("/book", asyncHandler(bookDemoCall));
+router.get("/all", asyncHandler(getAllDemoCalls));
+router.delete("/:id", asyncHandler(deleteDemoCall));
+router.put("/status/:id", asyncHandler(updateDemoCallStatus));
 
-// VERIFY OTP
-// router.post(
-//   "/verify-otp",
-//   asyncHandler(async (req, res) => {
-//     const result = await verifyOtpMsg91(req.body.mobile, req.body.otp);
-
-//     if (!result || result.type !== "success") {
-//       res.status(400);
-//       throw new Error("Invalid OTP");
-//     }
-
-//     res.status(200).json({
-//       message: "OTP verified successfully",
-//     });
-//   })
-// );
-
-/* ======================================================
-   BOOK DEMO CALL (POST /api/demo-call/book)
-====================================================== */
-router.post(
-  "/book",
-  asyncHandler(async (req, res) => {
-    const saved = await DemoCall.create(req.body);
-
-    if (!saved) {
-      res.status(400);
-      throw new Error("Failed to save demo call");
-    }
-
-    res.status(201).json({
-      message: "Demo call booked successfully",
-      data: saved,
-    });
-  })
-);
-
-/* ======================================================
-   GET ALL DEMO CALL REQUESTS (Admin)
-   GET /api/demo-call/all
-====================================================== */
-router.get(
-  "/all",
-  asyncHandler(async (req, res) => {
-    const calls = await DemoCall.find().sort({ createdAt: -1 });
-
-    if (!calls) {
-      res.status(404);
-      throw new Error("No schedule call data found");
-    }
-
-    res.status(200).json({
-      message: "Schedule call list fetched successfully",
-      data: calls,
-    });
-  })
-);
-
-/* ======================================================
-   DELETE DEMO CALL ENTRY
-   DELETE /api/demo-call/:id
-====================================================== */
-router.delete(
-  "/:id",
-  asyncHandler(async (req, res) => {
-    const { id } = req.params;
-
-    const deleted = await DemoCall.findByIdAndDelete(id);
-
-    if (!deleted) {
-      res.status(404);
-      throw new Error("Entry not found");
-    }
-
-    res.status(200).json({
-      message: "Entry deleted successfully",
-      deletedId: id,
-    });
-  })
-);
-
-router.put(
-  "/status/:id",
-  asyncHandler(async (req, res) => {
-    const updated = await DemoCall.findByIdAndUpdate(
-      req.params.id,
-      { status: req.body.status },
-      { new: true }
-    );
-
-    if (!updated) {
-      res.status(404);
-      throw new Error("Entry not found");
-    }
-
-    res.status(200).json({ message: "Status updated", data: updated });
-  })
-);
 export default router;

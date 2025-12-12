@@ -1,131 +1,100 @@
-// // server.js
-// import express from "express";
-// import dotenv from "dotenv";
-// import cors from "cors";
-// import connectDB from "./config/db.js";
-// import authRoutes from "./routes/authRoutes.js";
-// import quizRoutes from "./routes/quizRoutes.js";
-// import quizresultRoutes from "./routes/quizresultRoutes.js";
-// import otpRoutes from "./routes/otp.js";
-// import userRoutes from "./routes/userRoutes.js";
-// import demoCallRoutes from "./routes/demoCallRoutes.js";
-// import { errorHandler } from "./middleware/errorHandler.js";
-
-// dotenv.config();
-// connectDB();
-
-// const app = express();
-// app.use(cors());
-// app.use(express.json());
-
-// // ROUTES
-// app.use("/api/auth", authRoutes);
-// app.use("/api/quiz", quizRoutes);
-// app.use("/api/quizresult", quizresultRoutes);
-// app.use("/api/otp", otpRoutes);
-// app.use("/api/users", userRoutes);
-// app.use("/api/demo-call", demoCallRoutes);
-
-// // GLOBAL ERROR HANDLER
-// app.use(errorHandler);
-
-// app.listen(process.env.PORT, () =>
-//   console.log(`Server running on port ${process.env.PORT}`)
-// );
-
-// // server.js
-// import express from "express";
-// import dotenv from "dotenv";
-// import cors from "cors";
-// import connectDB from "./config/db.js";
-// import authRoutes from "./routes/authRoutes.js";
-// import quizRoutes from "./routes/quizRoutes.js";
-// import quizresultRoutes from "./routes/quizresultRoutes.js";
-// import otpRoutes from "./routes/otp.js";
-// import userRoutes from "./routes/userRoutes.js";
-// import demoCallRoutes from "./routes/demoCallRoutes.js";
-// import { errorHandler } from "./middleware/errorHandler.js";
-// import recaptchaRoutes from "./routes/recaptchaRoutes.js";
-// import firebaseGoogleRoutes from "./routes/authRoutes.js";
-
-// // NOTE: The previous logic for GOOGLE_APPLICATION_CREDENTIALS is REMOVED 
-// // as it caused errors. We now handle credentials directly in recaptchaRoutes.js.
-
-// dotenv.config();
-// connectDB();
-
-// const app = express();
-
-// // --- CRITICAL CORS CONFIGURATION (MUST BE FIRST) ---
-// app.use(cors({
-//   // Ensure all allowed origins are listed
-//   origin: ["http://localhost:5173", "https://stellarcampus.com"],
-//   // Ensure the OPTIONS method is allowed for preflight requests
-//   methods: ["GET", "HEAD", "POST", "OPTIONS", "PUT", "PATCH", "DELETE"], 
-//   allowedHeaders: ["Content-Type", "Authorization"],
-// }));
-// // ---------------------------------------------------
-
-// app.use(express.json());
-
-// // ROUTES
-// app.use("/api/auth", authRoutes);
-// app.use("/api/quiz", quizRoutes);
-// app.use("/api/quizresult", quizresultRoutes);
-// app.use("/api/otp", otpRoutes);
-// app.use("/api/users", userRoutes);
-// app.use("/api/demo-call", demoCallRoutes);
-// app.use("/api/recaptcha", recaptchaRoutes); // This route must be covered by the global CORS
-// app.use("/api/auth", firebaseGoogleRoutes);
-
-// // GLOBAL ERROR HANDLER
-// app.use(errorHandler);
-
-// app.listen(process.env.PORT, () =>
-//   console.log(`Server running on port ${process.env.PORT}`)
-// );
+/**
+ * ------------------------------------------------------------------
+ * Main Express Server
+ * ------------------------------------------------------------------
+ * Responsibilities:
+ * - Load environment variables
+ * - Connect to MongoDB
+ * - Register global middlewares
+ * - Register API routes
+ * - Attach global error handler
+ * - Start Express HTTP server
+ *
+ * Best Practices Followed:
+ * - CORS configured with explicit allowed origins
+ * - express.json() to parse incoming JSON request body
+ * - All errors thrown inside async handlers bubble to global handler
+ * - Routes separated for maintainability
+ * ------------------------------------------------------------------
+ */
 
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
+
+// Database connection
 import connectDB from "./config/db.js";
 
+// Route modules
 import authRoutes from "./routes/authRoutes.js";
 import quizRoutes from "./routes/quizRoutes.js";
 import quizresultRoutes from "./routes/quizresultRoutes.js";
 import otpRoutes from "./routes/otp.js";
 import userRoutes from "./routes/userRoutes.js";
 import demoCallRoutes from "./routes/demoCallRoutes.js";
-import recaptchaRoutes from "./routes/recaptchaRoutes.js";
 
+// Global error middleware
 import { errorHandler } from "./middleware/errorHandler.js";
 
+// Load environment variables
 dotenv.config();
+
+// Connect to MongoDB
 connectDB();
 
 const app = express();
 
-// CORS
-app.use(cors({
-  origin: ["http://localhost:5173", "https://stellarcampus.com"],
-  methods: ["GET", "POST", "PUT", "DELETE"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-}));
+/* ------------------------------------------------------------------
+   CORS CONFIGURATION
+   - Allows specific frontend domains
+   - Restricts allowed HTTP methods
+   - Supports Authorization header for JWT
+------------------------------------------------------------------ */
+app.use(
+  cors({
+    origin: ["http://localhost:5173", "https://stellarcampus.com"],
+    methods: ["GET", "HEAD", "POST", "OPTIONS", "PUT", "PATCH", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
 
+/* ------------------------------------------------------------------
+   BODY PARSER
+   - Enables Express to read JSON request bodies
+------------------------------------------------------------------ */
 app.use(express.json());
 
-// ROUTES
+/* ------------------------------------------------------------------
+   ROUTES
+   Organized REST API structure:
+   - /api/auth          → Authentication (Login, Register, Google OAuth)
+   - /api/quiz          → Quiz CRUD & publish control
+   - /api/quizresult    → Quiz submissions and scoring
+   - /api/otp           → OTP registration flow
+   - /api/users         → Admin user management
+   - /api/demo-call     → Demo call booking & admin view
+------------------------------------------------------------------ */
 app.use("/api/auth", authRoutes);
 app.use("/api/quiz", quizRoutes);
 app.use("/api/quizresult", quizresultRoutes);
 app.use("/api/otp", otpRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/demo-call", demoCallRoutes);
-app.use("/api/recaptcha", recaptchaRoutes);
 
-// ERROR HANDLER
+/* ------------------------------------------------------------------
+   GLOBAL ERROR HANDLER
+   - Must be last middleware
+   - Captures thrown errors and returns proper JSON responses
+------------------------------------------------------------------ */
 app.use(errorHandler);
 
-app.listen(process.env.PORT, () =>
-  console.log(`Server running on port ${process.env.PORT}`)
-);
+/* ------------------------------------------------------------------
+   START SERVER
+   - Uses PORT from env file
+   - Logs active port for debugging/monitoring
+------------------------------------------------------------------ */
+// app.listen(process.env.PORT, () => {
+//   console.log(`Server running on port ${process.env.PORT}`);
+// });
+
+export default app;

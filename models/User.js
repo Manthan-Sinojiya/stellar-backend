@@ -1,20 +1,49 @@
-// models/User.js
+/**
+ * ------------------------------------------------------------------
+ * User Model
+ * ------------------------------------------------------------------
+ * Responsibilities:
+ * - Stores user profile details
+ * - Supports authentication (email/password or Google OAuth)
+ * - Contains role-based access (admin/user)
+ * - Includes verification flags for OTP registration system
+ *
+ * Notes:
+ * - email + mobile fields marked unique for duplicate prevention
+ * - Password is stored hashed (bcrypt)
+ * - isVerified: true when OTP/email verification is completed
+ * ------------------------------------------------------------------
+ */
+
 import mongoose from "mongoose";
 
-const userSchema = new mongoose.Schema({
-  fullName: String,
-  fatherName: String,
-  email: { type: String, unique: true },
-  mobile: { type: String, unique: true },
-  password: String,
-  address1: String,
-  address2: String,
-  city: String,
-  state: String,
-  pincode: String,
-  image: String,
-  isVerified: { type: Boolean, default: false },
-  role: { type: String, enum: ["admin", "user"], default: "user" }
-});
+const userSchema = new mongoose.Schema(
+  {
+    fullName: { type: String },
+    fatherName: { type: String },
+
+    // Unique identifiers
+    email: { type: String, unique: true },
+    mobile: { type: String, unique: true },
+
+    // Hashed password (bcrypt)
+    password: { type: String },
+
+    // Optional profile details
+    address1: String,
+    address2: String,
+    city: String,
+    state: String,
+    pincode: String,
+    image: String,
+
+    // OTP verification flag
+    isVerified: { type: Boolean, default: false },
+
+    // Role-based permissions
+    role: { type: String, enum: ["admin", "user"], default: "user" },
+  },
+  { timestamps: true } // createdAt, updatedAt auto-generation
+);
 
 export default mongoose.model("User", userSchema);

@@ -1,20 +1,35 @@
-// middleware/errorHandler.js
 /**
- * Global error handler
- * - Logs server-side error message
- * - Uses res.statusCode when already set or defaults to 500
- * - Responds with { success: false, message }
+ * ------------------------------------------------------------------
+ * Global Error Handling Middleware
+ * ------------------------------------------------------------------
+ * Purpose:
+ * - Captures all thrown errors from controllers & middleware
+ * - Ensures consistent JSON error format
+ * - Sets status code based on:
+ *      → res.statusCode if already set
+ *      → otherwise defaults to 500
  *
- * Usage: app.use(errorHandler) at the end of express middleware stack.
+ * JSON Response Format:
+ * {
+ *   success: false,
+ *   message: "Error message"
+ * }
+ *
+ * Why throw errors instead of res.json?
+ * - Keeps controllers clean
+ * - Centralizes error formatting
+ * - asyncHandler automatically forwards errors here
+ * ------------------------------------------------------------------
  */
 
 export const errorHandler = (err, req, res, next) => {
-  // Log full error on server console (helpful during debugging)
+  // Log the error for server debugging
   console.error("Error:", err);
 
-  // If a controller already set res.statusCode (e.g., 404), use it;
-  // otherwise default to 500 (internal server error)
-  const statusCode = res.statusCode && res.statusCode !== 200 ? res.statusCode : 500;
+  // If controller explicitly set statusCode, use it; else default to 500
+  const statusCode =
+    res.statusCode && res.statusCode !== 200 ? res.statusCode : 500;
+
   res.status(statusCode).json({
     success: false,
     message: err.message || "Server Error",

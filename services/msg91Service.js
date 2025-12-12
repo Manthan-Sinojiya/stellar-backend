@@ -1,62 +1,104 @@
-// // services/msg91Service.js
-// import fetch from "node-fetch";
-// import dotenv from "dotenv";
-// dotenv.config();
+import axios from "axios";
 
-// export const sendOtp = async (mobile, otp) => {
-//   const url = "https://api.msg91.com/api/v5/otp";
+const MSG91_AUTH_KEY = process.env.MSG91_AUTH_KEY;
+const MSG91_SENDER_ID = process.env.MSG91_SENDER_ID;
+const MSG91_TEMPLATE_ID = process.env.MSG91_TEMPLATE_ID;
 
-//   const response = await fetch(url, {
-//     method: "POST",
-//     headers: {
-//       accept: "application/json",
-//       authkey: process.env.MSG91_AUTH_KEY,
-//       "content-type": "application/json",
-//     },
-//     body: JSON.stringify({
-//       mobile: `91${mobile}`,
-//       otp,
-//       template_id: process.env.MSG91_OTP_TEMPLATE_ID,
-//     }),
-//   });
-
-//   const data = await response.json();
-//   console.log("MSG91 Response:", data);
-
-//   if (!response.ok) throw new Error(data.message || "Failed to send OTP");
-
-//   return true;
-// };
-
-
-// services/msg91Service.js
-import fetch from "node-fetch";
-import dotenv from "dotenv";
-dotenv.config();
-
+/* ----------------------------------------------------------
+   Send OTP (used by otpController.js → sendOtp())
+----------------------------------------------------------- */
 export const sendOtp = async (mobile, otp) => {
-  const url = "https://api.msg91.com/api/v5/otp";
-
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {
-      accept: "application/json",
-      authkey: process.env.MSG91_AUTH_KEY,
-      "content-type": "application/json",
-    },
-    body: JSON.stringify({
+  try {
+    const url = `https://control.msg91.com/api/v5/otp`;
+    const payload = {
       mobile: `91${mobile}`,
       otp,
-      template_id: process.env.MSG91_OTP_TEMPLATE_ID,
-    }),
-  });
+      sender_id: MSG91_SENDER_ID,
+      template_id: MSG91_TEMPLATE_ID,
+    };
 
-  const data = await response.json();
-  console.log("MSG91 Send OTP:", data);
+    const headers = {
+      "Content-Type": "application/json",
+      authkey: MSG91_AUTH_KEY,
+    };
 
-  if (!response.ok) {
-    throw new Error(data.message || "Failed to send OTP");
+    const response = await axios.post(url, payload, { headers });
+    return response.data;
+  } catch (err) {
+    console.error("MSG91 sendOtp Error:", err.response?.data || err.message);
+    throw new Error("Failed to send OTP via MSG91");
   }
+};
 
-  return true;
+/* ----------------------------------------------------------
+   Send OTP (used by demoCallController.js → sendOtpMsg91())
+   — This version auto-generates OTP
+----------------------------------------------------------- */
+export const sendOtpMsg91 = async (mobile) => {
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+  try {
+    const url = `https://control.msg91.com/api/v5/otp`;
+    const payload = {
+      mobile: `91${mobile}`,
+      otp,
+      sender_id: MSG91_SENDER_ID,
+      template_id: MSG91_TEMPLATE_ID,
+    };
+
+    const headers = {
+      "Content-Type": "application/json",
+      authkey: MSG91_AUTH_KEY,
+    };
+
+    const response = await axios.post(url, payload, { headers });
+
+    return {
+      type: "success",
+      otp,
+      data: response.data,
+    };
+  } catch (err) {
+    console.error("MSG91 sendOtpMsg91 Error:", err.response?.data || err.message);
+    return {
+      type: "error",
+      error: err.response?.data || err.message,
+    };
+  }
+};
+
+/* ----------------------------------------------------------
+   Verify OTP (used in demoCallController.js → verifyOtpMsg91())
+----------------------------------------------------------- */
+export const verifyOtpMsg91 = async (mobile, otp) => {
+  try {
+    const url = `https://control.msg91.com/api/v5/otp/verify`;
+
+    const payload = {
+      mobile: `91${mobile}`,
+      otp,
+    };
+
+    const headers = {
+      "Content-Type": "application/json",
+      authkey: MSG91_AUTH_KEY,
+    };
+
+    const response = await axios.post(url, payload, { headers });
+
+    return response.data;
+  } catch (err) {
+    console.error("MSG91 verifyOtpMsg91 Error:", err.response?.data || err.message);
+
+    return {
+      type: "error",
+      message: "OTP verification failed",
+    };
+  }
+};
+
+export default {
+  sendOtp,
+  sendOtpMsg91,
+  verifyOtpMsg91,
 };

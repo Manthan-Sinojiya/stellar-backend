@@ -1,30 +1,49 @@
-// controllers/quizresultController.js
 /**
- * Handles evaluating quiz submissions and storing results.
+ * ------------------------------------------------------------------
+ * QUIZ RESULT CONTROLLER
+ * ------------------------------------------------------------------
+ * Responsibilities:
+ * - Accept student quiz submissions
+ * - Evaluate answers against stored quiz questions
+ * - Compute score, percentage, and capture detailed evaluation
+ * - Store attempt in database for review and analytics
  *
- * Why evaluation must be done in backend?
- * - Prevents cheating (students can't modify score in frontend)
- * - Ensures accurate comparison between correct answers and submitted answers
- * - Centralized validation for MCQ, checkbox, and text questions
+ * Why evaluation must be in the backend?
+ * - Prevents cheating from frontend manipulation
+ * - Ensures correct answer comparison logic is centralized
+ * - Allows audit trail and future re-evaluation if logic changes
+ *
+ * Design Principles:
+ * - asyncHandler handles errors without try/catch
+ * - All errors are thrown → handled by global error middleware
+ * - Uses a consistent evaluation strategy for MCQ, checkbox, and text
+ * ------------------------------------------------------------------
  */
 
 import asyncHandler from "express-async-handler";
 import Quiz from "../models/Quiz.js";
 import QuizResult from "../models/QuizResult.js";
 
-/**
- * POST /api/quizresult/submit
- * Student submits quiz answers → backend evaluates and saves result
- */
+/* ------------------------------------------------------------------
+   POST /api/quizresult/submit
+   - Evaluates a student's quiz attempt
+   - Requires authentication (protect middleware)
+   - Stores detailed and summarized results
+------------------------------------------------------------------ */
 export const submitQuizResult = asyncHandler(async (req, res) => {
   const userId = req.user?.id;
 
+  // Should never happen unless token missing/invalid
   if (!userId) {
-    return res.status(401).json({ success: false, message: "Unauthorized" });
+    return res.status(401).json({
+      success: false,
+      message: "Unauthorized",
+    });
   }
 
   const { quizId, answers } = req.body;
 
+  // Basic validation of payload
   if (!quizId || !answers) {
     return res.status(400).json({
       success: false,
@@ -32,32 +51,40 @@ export const submitQuizResult = asyncHandler(async (req, res) => {
     });
   }
 
-  // Load quiz with original questions and correct answers
+  // Load original quiz for evaluation
   const quiz = await Quiz.findById(quizId);
 
   if (!quiz) {
-    return res.status(404).json({ success: false, message: "Quiz not found" });
+    return res.status(404).json({
+      success: false,
+      message: "Quiz not found",
+    });
   }
 
   let score = 0;
   const evaluatedAnswers = [];
 
   /**
-   * Loop each question and compare user's answer with correct answer.
-   * Supports:
-   * - MCQ (single choice)
-   * - Checkbox (multiple choice)
-   * - Text answers
+   * --------------------------------------------------------------
+   * EVALUATION LOOP
+   * For each quiz question, compare submitted answer with correct answer.
+   *
+   * Question Types Supported:
+   * - MCQ     → selectedIndex matches correct index
+   * - Checkbox → compare selected array with correct array
+   * - Text     → case-insensitive string comparison
+   * --------------------------------------------------------------
    */
   quiz.questions.forEach((q, index) => {
     const submitted = answers[index];
     let isCorrect = false;
 
-    /** -------------------------------
-     * 1️⃣ Evaluate MCQ Question
-     --------------------------------*/
+    /* --------------------------------------------------------------
+       1️⃣ Evaluate MCQ
+       - Correct if selectedIndex matches correct option index
+    -------------------------------------------------------------- */
     if (q.type === "mcq") {
-      const correctIndex = q.options.indexOf(q.answer);
+      const correctIndex = q.options.indexOf(q.answer); // correct answer index
       const userIndex = Number(submitted?.selectedIndex);
 
       if (userIndex === correctIndex) {
@@ -75,10 +102,10 @@ export const submitQuizResult = asyncHandler(async (req, res) => {
       });
     }
 
-    /** -------------------------------
-     * 2️⃣ Evaluate CHECKBOX Question
-     *    - Compare two sets of answers
-     --------------------------------*/
+    /* --------------------------------------------------------------
+       2️⃣ Evaluate Checkbox
+       - Convert to sets → check if all values match exactly
+    -------------------------------------------------------------- */
     if (q.type === "checkbox") {
       const correct = q.answer.map((x) => x.trim());
       const user = (submitted?.selected || []).map((x) => x.trim());
@@ -104,10 +131,10 @@ export const submitQuizResult = asyncHandler(async (req, res) => {
       });
     }
 
-    /** -------------------------------
-     * 3️⃣ Evaluate TEXT Question
-     *    - Simple lowercase comparison
-     --------------------------------*/
+    /* --------------------------------------------------------------
+       3️⃣ Evaluate Text
+       - Case-insensitive comparison
+    -------------------------------------------------------------- */
     if (q.type === "text") {
       const correctText = q.answer.trim().toLowerCase();
       const userText = (submitted?.written || "").trim().toLowerCase();
@@ -127,10 +154,12 @@ export const submitQuizResult = asyncHandler(async (req, res) => {
     }
   });
 
-  // Final score calculation
+  // Calculate final percentage
   const percentage = (score / quiz.questions.length) * 100;
 
-  // Save attempt result in database
+  /* --------------------------------------------------------------
+     Store final quiz attempt result in DB
+  -------------------------------------------------------------- */
   const result = await QuizResult.create({
     userId,
     quizId,
@@ -138,7 +167,7 @@ export const submitQuizResult = asyncHandler(async (req, res) => {
     totalMarks: quiz.questions.length,
     percentage,
     attempted: quiz.questions.length,
-    answers: evaluatedAnswers, // stores detailed answer comparison
+    answers: evaluatedAnswers, // Detailed breakdown for review
   });
 
   res.json({

@@ -1,3 +1,16 @@
+/**
+ * ------------------------------------------------------------------
+ * Demo Call Model
+ * ------------------------------------------------------------------
+ * Responsibilities:
+ * - Stores demo call requests submitted via website or app
+ * - Admin updates status after calling user
+ *
+ * Fields:
+ * - status: Tracks whether user has been contacted
+ * ------------------------------------------------------------------
+ */
+
 import mongoose from "mongoose";
 
 const demoCallSchema = new mongoose.Schema(
@@ -7,7 +20,7 @@ const demoCallSchema = new mongoose.Schema(
     mobile: { type: String },
     message: { type: String },
 
-    // ADD THIS FIELD
+    // Status for admin follow-up workflow
     status: {
       type: String,
       enum: ["not_contacted", "called"],
