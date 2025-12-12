@@ -93,8 +93,6 @@ app.use(errorHandler);
    - Uses PORT from env file
    - Logs active port for debugging/monitoring
 ------------------------------------------------------------------ */
-// app.listen(process.env.PORT, () => {
-//   console.log(`Server running on port ${process.env.PORT}`);
-// });
-
-export default app;
+app.listen(process.env.PORT, () => {
+  console.log(`Server running on port ${process.env.PORT}`);
+});
