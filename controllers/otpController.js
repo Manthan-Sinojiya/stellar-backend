@@ -175,14 +175,8 @@ export const registerUser = asyncHandler(async (req, res) => {
    - Deletes OTP after verification for security
 ------------------------------------------------------------------ */
 export const verifyOtpAndCreate = asyncHandler(async (req, res) => {
-  const { mobile, otp, userData } = req.body;
+  const { mobile, otp } = req.body;
 
-  if (!mobile || !otp || !userData) {
-    res.status(400);
-    throw new Error("Mobile, OTP, and user data are required");
-  }
-
-  // Find OTP record
   const record = await Otp.findOne({ mobile });
 
   if (!record) {
@@ -190,42 +184,15 @@ export const verifyOtpAndCreate = asyncHandler(async (req, res) => {
     throw new Error("OTP expired or invalid");
   }
 
-  // Validate OTP
   if (record.otp !== otp) {
     res.status(400);
     throw new Error("Incorrect OTP");
   }
 
-  // Prevent duplicate users
-  const exists = await User.findOne({
-    $or: [{ email: userData.email }, { mobile }],
-  });
-
-  if (exists) {
-    res.status(400);
-    throw new Error("User already exists");
-  }
-
-  // Hash password securely
-  const hashedPassword = await bcrypt.hash(userData.password, 10);
-
-  // Create user
-  const user = await User.create({
-    ...userData,
-    mobile,
-    password: hashedPassword,
-    isVerified: true, // mobile verified via OTP
-  });
-
-  // Remove OTP after successful verification
+  // OTP verified — delete record
   await Otp.deleteOne({ mobile });
 
-  res.status(201).json({
-    message: "User registered successfully",
-    user: {
-      id: user._id,
-      email: user.email,
-      role: user.role,
-    },
+  res.json({
+    message: "Mobile verified successfully",
   });
 });
