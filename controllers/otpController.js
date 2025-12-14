@@ -62,13 +62,18 @@ export const registerUser = asyncHandler(async (req, res) => {
 });
 
 /* ------------------------------------------------------------------
-   POST /api/otp/verify-otp
+  POST /api/otp/verify-otp
    - Verifies OTP
-   - Creates user with userData (nested object)
+   - Creates user using userData
    - Deletes OTP after verification for security
 ------------------------------------------------------------------ */
 export const verifyOtpAndCreate = asyncHandler(async (req, res) => {
   const { mobile, otp, userData } = req.body;
+
+  if (!mobile || !otp || !userData) {
+    res.status(400);
+    throw new Error("Mobile, OTP, and user data are required");
+  }
 
   // Find OTP record
   const record = await Otp.findOne({ mobile });
@@ -78,28 +83,42 @@ export const verifyOtpAndCreate = asyncHandler(async (req, res) => {
     throw new Error("OTP expired or invalid");
   }
 
-  // Validate OTP match
+  // Validate OTP
   if (record.otp !== otp) {
     res.status(400);
     throw new Error("Incorrect OTP");
   }
 
-  /* --------------------------------------------------------------
-     OTP Verified → Create user
-  -------------------------------------------------------------- */
+  // Prevent duplicate users
+  const exists = await User.findOne({
+    $or: [{ email: userData.email }, { mobile }],
+  });
+
+  if (exists) {
+    res.status(400);
+    throw new Error("User already exists");
+  }
+
+  // Hash password securely
   const hashedPassword = await bcrypt.hash(userData.password, 10);
 
-  await User.create({
+  // Create user
+  const user = await User.create({
     ...userData,
     mobile,
     password: hashedPassword,
-    isVerified: true, // Mark mobile verification done
+    isVerified: true, // mobile verified via OTP
   });
 
-  // Remove OTP record after success
+  // Remove OTP after successful verification
   await Otp.deleteOne({ mobile });
 
-  res.json({
+  res.status(201).json({
     message: "User registered successfully",
+    user: {
+      id: user._id,
+      email: user.email,
+      role: user.role,
+    },
   });
 });
