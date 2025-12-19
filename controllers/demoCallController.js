@@ -15,7 +15,7 @@
 import asyncHandler from "express-async-handler";
 import DemoCall from "../models/DemoCall.js";
 import Otp from "../models/Otp.js";
-import { sendOtp } from "../services/awsSnsService.js";
+import { sendOtp, sendSnsOtp } from "../services/awsSnsService.js";
 
 /* -------------------------------------------------------
    Helper: Generate 6-digit OTP
