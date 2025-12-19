@@ -32,6 +32,7 @@ import quizresultRoutes from "./routes/quizresultRoutes.js";
 import otpRoutes from "./routes/otp.js";
 import userRoutes from "./routes/userRoutes.js";
 import demoCallRoutes from "./routes/demoCallRoutes.js";
+import applicationRoutes from "./routes/applicationRoutes.js";
 
 // Global error middleware
 import { errorHandler } from "./middleware/errorHandler.js";
@@ -80,7 +81,7 @@ app.use("/api/quizresult", quizresultRoutes);
 app.use("/api/otp", otpRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/demo-call", demoCallRoutes);
-
+app.use("/api/applications", applicationRoutes);
 /* ------------------------------------------------------------------
    GLOBAL ERROR HANDLER
    - Must be last middleware
@@ -96,5 +97,9 @@ app.use(errorHandler);
 app.listen(process.env.PORT, () => {
   console.log(`Server running on port ${process.env.PORT}`);
 });
+
+console.log("AWS_REGION:", process.env.AWS_REGION);
+console.log("AWS_ACCESS_KEY_ID:", process.env.AWS_ACCESS_KEY_ID ? "LOADED" : "MISSING");
+console.log("AWS_SECRET_ACCESS_KEY:", process.env.AWS_SECRET_ACCESS_KEY ? "LOADED" : "MISSING");
 
 export default app;

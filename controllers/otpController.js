@@ -18,7 +18,7 @@
 import asyncHandler from "express-async-handler";
 import User from "../models/User.js";
 import Otp from "../models/Otp.js";
-import { sendOtp } from "../services/msg91Service.js";
+import { sendOtp } from "../services/awsSnsService.js";
 import bcrypt from "bcryptjs";
 
 /* ------------------------------------------------------------------
@@ -33,32 +33,21 @@ const generateOtp = () =>
    - Validated by otpSendValidation() before reaching controller
    - Prevents duplicate registration by checking existing email/mobile
 ------------------------------------------------------------------ */
+
 export const registerUser = asyncHandler(async (req, res) => {
-  const { mobile, email } = req.body;
+  const { mobile } = req.body;
 
-  // Prevent duplicate users via mobile or email
-  const exists = await User.findOne({ $or: [{ mobile }, { email }] });
-
-  if (exists) {
-    res.status(400);
-    throw new Error("User already exists");
-  }
-
-  // Generate and send OTP
   const otp = generateOtp();
+
   await sendOtp(mobile, otp);
 
-  // Save OTP (upsert = update if exists or create new)
   await Otp.findOneAndUpdate(
     { mobile },
-    { otp },
-    { upsert: true, new: true }
+    { otp, createdAt: new Date() },
+    { upsert: true }
   );
 
-  res.json({
-    message: "OTP sent successfully",
-    mobile,
-  });
+  res.status(200).json({ message: "OTP sent successfully" });
 });
 
 /* ------------------------------------------------------------------
@@ -67,58 +56,23 @@ export const registerUser = asyncHandler(async (req, res) => {
    - Creates user using userData
    - Deletes OTP after verification for security
 ------------------------------------------------------------------ */
+
 export const verifyOtpAndCreate = asyncHandler(async (req, res) => {
-  const { mobile, otp, userData } = req.body;
+  const { mobile, otp } = req.body;
 
-  if (!mobile || !otp || !userData) {
-    res.status(400);
-    throw new Error("Mobile, OTP, and user data are required");
-  }
-
-  // Find OTP record
   const record = await Otp.findOne({ mobile });
 
   if (!record) {
     res.status(400);
-    throw new Error("OTP expired or invalid");
+    throw new Error("OTP expired");
   }
 
-  // Validate OTP
   if (record.otp !== otp) {
     res.status(400);
-    throw new Error("Incorrect OTP");
+    throw new Error("Invalid OTP");
   }
 
-  // Prevent duplicate users
-  const exists = await User.findOne({
-    $or: [{ email: userData.email }, { mobile }],
-  });
-
-  if (exists) {
-    res.status(400);
-    throw new Error("User already exists");
-  }
-
-  // Hash password securely
-  const hashedPassword = await bcrypt.hash(userData.password, 10);
-
-  // Create user
-  const user = await User.create({
-    ...userData,
-    mobile,
-    password: hashedPassword,
-    isVerified: true, // mobile verified via OTP
-  });
-
-  // Remove OTP after successful verification
   await Otp.deleteOne({ mobile });
 
-  res.status(201).json({
-    message: "User registered successfully",
-    user: {
-      id: user._id,
-      email: user.email,
-      role: user.role,
-    },
-  });
+  res.json({ message: "Mobile verified successfully" });
 });

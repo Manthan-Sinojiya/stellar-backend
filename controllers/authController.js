@@ -28,7 +28,7 @@ import { oauth2Client } from "../utils/googleClient.js";
    - Standard user registration
 ------------------------------------------------------------------ */
 export const registerUser = asyncHandler(async (req, res) => {
-  const { fullName, fatherName, email, mobile, password, role } = req.body;
+  const { fullName, fatherName, email, mobile, password, pincode, city, state, address1, address2, role } = req.body;
 
   const exists = await User.findOne({ email });
   if (exists) {
@@ -44,6 +44,11 @@ export const registerUser = asyncHandler(async (req, res) => {
     email,
     mobile,
     password: hashedPassword,
+    pincode,
+    city,
+    state,
+    address1,
+    address2,
     role: role || "user",
     isVerified: true, // OTP verified before register
   });

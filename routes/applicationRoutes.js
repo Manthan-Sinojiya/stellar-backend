@@ -1,0 +1,32 @@
+import express from "express";
+import { protect } from "../middleware/authMiddleware.js";
+import {
+  getProfile,
+  getProgress,
+  saveEducation,
+  addCertification,
+  scheduleInterview,
+  completeProfileStep,
+} from "../controllers/applicationController.js";
+
+const router = express.Router();
+
+// STEP 1 – profile (read-only)
+router.get("/profile", protect, getProfile);
+
+// STEP 1 – mark profile completed
+router.post("/profile/complete", protect, completeProfileStep);
+
+// STEP PROGRESS
+router.get("/progress", protect, getProgress);
+
+// STEP 2 – education
+router.post("/education", protect, saveEducation);
+
+// STEP 4 – certification
+router.post("/certification", protect, addCertification);
+
+// STEP 5 – interview
+router.post("/interview", protect, scheduleInterview);
+
+export default router;

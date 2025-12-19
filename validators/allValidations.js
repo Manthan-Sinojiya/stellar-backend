@@ -110,6 +110,31 @@ export const otpSendValidation = [
    POST /api/otp/verify-otp
    Includes nested userData.* validation
 ------------------------------------------------------------------ */
+// export const otpVerifyValidation = [
+//   body("mobile")
+//     .matches(mobileRegex)
+//     .withMessage("Valid mobile number required"),
+
+//   body("otp")
+//     .isLength({ min: 6, max: 6 })
+//     .withMessage("OTP must be exactly 6 digits"),
+
+//   // Nested fields for final registration
+//   body("userData.fullName")
+//     .matches(nameRegex)
+//     .withMessage("Full name must be alphabetic"),
+
+//   body("userData.email")
+//     .matches(emailRegex)
+//     .withMessage("Valid email required"),
+
+//   body("userData.password")
+//     .matches(strongPasswordRegex)
+//     .withMessage(
+//       "Password must be 8+ chars with uppercase, lowercase, number & special symbol"
+//     ),
+// ];
+
 export const otpVerifyValidation = [
   body("mobile")
     .matches(mobileRegex)
@@ -117,22 +142,9 @@ export const otpVerifyValidation = [
 
   body("otp")
     .isLength({ min: 6, max: 6 })
-    .withMessage("OTP must be exactly 6 digits"),
-
-  // Nested fields for final registration
-  body("userData.fullName")
-    .matches(nameRegex)
-    .withMessage("Full name must be alphabetic"),
-
-  body("userData.email")
-    .matches(emailRegex)
-    .withMessage("Valid email required"),
-
-  body("userData.password")
-    .matches(strongPasswordRegex)
-    .withMessage(
-      "Password must be 8+ chars with uppercase, lowercase, number & special symbol"
-    ),
+    .withMessage("OTP must be exactly 6 digits")
+    .isNumeric()
+    .withMessage("OTP must be numeric"),
 ];
 
 /* ------------------------------------------------------------------

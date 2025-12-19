@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "main": "server.js",
   "dependencies": {
+    "@aws-sdk/client-sns": "^3.953.0",
     "abort-controller": "^3.0.0",
     "accepts": "^2.0.0",
     "acorn": "^8.15.0",
@@ -361,7 +362,7 @@
     "ts-jest": "^29.4.6"
   },
   "scripts": {
-  "test": "NODE_ENV=test jest",
+    "test": "NODE_ENV=test jest",
     "start": "node server.js"
   },
   "author": "",
