@@ -20,12 +20,12 @@
 import express from "express";
 import asyncHandler from "express-async-handler";
 import {
-  sendOtp,
-  verifyOtp,
+  sendDemoCallOtp,
+  verifyDemoCallOtp,
   bookDemoCall,
   getAllDemoCalls,
   deleteDemoCall,
-  updateDemoCallStatus,
+  updateDemoCallStatus
 } from "../controllers/demoCallController.js";
 
 const router = express.Router();
