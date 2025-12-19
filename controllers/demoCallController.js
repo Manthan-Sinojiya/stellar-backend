@@ -37,6 +37,7 @@ export const sendDemoCallOtp = asyncHandler(async (req, res) => {
 
   const otp = generateOtp();
 
+  // ✅ This now works
   await sendSnsOtp(mobile, otp);
 
   await Otp.findOneAndUpdate(

@@ -30,6 +30,7 @@ export const sendOtp = async (mobile, otp) => {
   try {
     const message = 
       `Your Stellar verification code is ${otp}. ` +
+      `This OTP is valid for 5 minutes. ` +
       `OTP is confidential. We never call you asking for OTP. ` +
       `Please do not share it with anyone. - Stellar Campus`;
 
