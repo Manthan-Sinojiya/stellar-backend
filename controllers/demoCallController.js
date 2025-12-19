@@ -1,32 +1,49 @@
 /**
  * ------------------------------------------------------------------
- * DEMO CALL & OTP CONTROLLER
+ * DEMO CALL & OTP CONTROLLER (AWS SNS VERSION)
  * ------------------------------------------------------------------
  * Handles:
- * - Sending OTP using MSG91
- * - Verifying OTP using MSG91
+ * - Sending OTP using AWS SNS
+ * - Verifying OTP using MongoDB + TTL
  * - Booking demo call requests
- * - Fetching all demo call entries (Admin use)
+ * - Fetching all demo call entries (Admin)
  * - Deleting demo call entries
  * - Updating demo call follow-up status
- *
- * Design Principles:
- * - asyncHandler for async flow
- * - Errors are thrown → handled by global error handler
- * - Each action in its own dedicated function
  * ------------------------------------------------------------------
  */
 
 import asyncHandler from "express-async-handler";
 import DemoCall from "../models/DemoCall.js";
-import { sendOtpMsg91, verifyOtpMsg91 } from "../services/msg91Service.js";
+import Otp from "../models/Otp.js";
+import { sendOtp } from "../services/awsSnsService.js";
+
+/* -------------------------------------------------------
+   Helper: Generate 6-digit OTP
+------------------------------------------------------- */
+const generateOtp = () =>
+  Math.floor(100000 + Math.random() * 900000).toString();
 
 /* ------------------------------------------------------------------
    POST /api/demo-call/send-otp
-   - Sends OTP to user's mobile number via MSG91
+   - Sends OTP using AWS SNS
 ------------------------------------------------------------------ */
-export const sendOtp = asyncHandler(async (req, res) => {
-  await sendOtpMsg91(req.body.mobile);
+export const sendDemoCallOtp = asyncHandler(async (req, res) => {
+  const { mobile } = req.body;
+
+  if (!mobile || mobile.length !== 10) {
+    res.status(400);
+    throw new Error("Invalid mobile number");
+  }
+
+  const otp = generateOtp();
+
+  await sendOtp(mobile, otp);
+
+  await Otp.findOneAndUpdate(
+    { mobile },
+    { otp, createdAt: new Date() },
+    { upsert: true }
+  );
 
   res.status(200).json({
     message: "OTP sent successfully",
@@ -35,15 +52,24 @@ export const sendOtp = asyncHandler(async (req, res) => {
 
 /* ------------------------------------------------------------------
    POST /api/demo-call/verify-otp
-   - Verifies OTP using MSG91 API
+   - Verifies OTP (MongoDB + TTL)
 ------------------------------------------------------------------ */
-export const verifyOtp = asyncHandler(async (req, res) => {
-  const result = await verifyOtpMsg91(req.body.mobile, req.body.otp);
+export const verifyDemoCallOtp = asyncHandler(async (req, res) => {
+  const { mobile, otp } = req.body;
 
-  if (!result || result.type !== "success") {
+  const record = await Otp.findOne({ mobile });
+
+  if (!record) {
+    res.status(400);
+    throw new Error("OTP expired or not found");
+  }
+
+  if (record.otp !== otp) {
     res.status(400);
     throw new Error("Invalid OTP");
   }
+
+  await Otp.deleteOne({ mobile });
 
   res.status(200).json({
     message: "OTP verified successfully",
@@ -52,7 +78,6 @@ export const verifyOtp = asyncHandler(async (req, res) => {
 
 /* ------------------------------------------------------------------
    POST /api/demo-call/book
-   - Creates a new demo call request
 ------------------------------------------------------------------ */
 export const bookDemoCall = asyncHandler(async (req, res) => {
   const saved = await DemoCall.create(req.body);
@@ -69,15 +94,14 @@ export const bookDemoCall = asyncHandler(async (req, res) => {
 });
 
 /* ------------------------------------------------------------------
-   GET /api/demo-call/all
-   - Fetch all scheduled demo calls (Admin)
+   GET /api/demo-call/all (Admin)
 ------------------------------------------------------------------ */
 export const getAllDemoCalls = asyncHandler(async (req, res) => {
   const calls = await DemoCall.find().sort({ createdAt: -1 });
 
-  if (!calls) {
+  if (!calls.length) {
     res.status(404);
-    throw new Error("No schedule call data found");
+    throw new Error("No scheduled calls found");
   }
 
   res.status(200).json({
@@ -88,7 +112,6 @@ export const getAllDemoCalls = asyncHandler(async (req, res) => {
 
 /* ------------------------------------------------------------------
    DELETE /api/demo-call/:id
-   - Deletes a demo call entry
 ------------------------------------------------------------------ */
 export const deleteDemoCall = asyncHandler(async (req, res) => {
   const deleted = await DemoCall.findByIdAndDelete(req.params.id);
@@ -106,8 +129,6 @@ export const deleteDemoCall = asyncHandler(async (req, res) => {
 
 /* ------------------------------------------------------------------
    PUT /api/demo-call/status/:id
-   - Updates the status of a demo call request
-   - "not_contacted" | "called"
 ------------------------------------------------------------------ */
 export const updateDemoCallStatus = asyncHandler(async (req, res) => {
   const updated = await DemoCall.findByIdAndUpdate(
