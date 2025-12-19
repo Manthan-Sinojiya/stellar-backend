@@ -27,7 +27,7 @@ const generateOtp = () =>
    POST /api/demo-call/send-otp
    - Sends OTP using AWS SNS
 ------------------------------------------------------------------ */
-export const sendDemoCallOtp = asyncHandler(async (req, res) => {
+export const sendOtp = asyncHandler(async (req, res) => {
   const { mobile } = req.body;
 
   if (!mobile || mobile.length !== 10) {
@@ -54,7 +54,7 @@ export const sendDemoCallOtp = asyncHandler(async (req, res) => {
    POST /api/demo-call/verify-otp
    - Verifies OTP (MongoDB + TTL)
 ------------------------------------------------------------------ */
-export const verifyDemoCallOtp = asyncHandler(async (req, res) => {
+export const verifyOtp = asyncHandler(async (req, res) => {
   const { mobile, otp } = req.body;
 
   const record = await Otp.findOne({ mobile });

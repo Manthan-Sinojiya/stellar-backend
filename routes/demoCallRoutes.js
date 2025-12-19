@@ -20,8 +20,8 @@
 import express from "express";
 import asyncHandler from "express-async-handler";
 import {
-  sendDemoCallOtp,
-  verifyDemoCallOtp,
+  sendOtp,
+  verifyOtp,
   bookDemoCall,
   getAllDemoCalls,
   deleteDemoCall,
