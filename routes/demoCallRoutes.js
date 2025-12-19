@@ -20,8 +20,8 @@
 import express from "express";
 import asyncHandler from "express-async-handler";
 import {
-  sendOtp,
-  verifyOtp,
+  sendDemoCallOtp,
+  verifyDemoCallOtp,
   bookDemoCall,
   getAllDemoCalls,
   deleteDemoCall,
@@ -33,8 +33,8 @@ const router = express.Router();
 /* ------------------------------------------------------------------
    OTP Routes
 ------------------------------------------------------------------ */
-router.post("/send-otp", asyncHandler(sendOtp));
-router.post("/verify-otp", asyncHandler(verifyOtp));
+router.post("/send-otp", sendDemoCallOtp);
+router.post("/verify-otp", verifyDemoCallOtp);
 
 /* ------------------------------------------------------------------
    Demo Call Routes

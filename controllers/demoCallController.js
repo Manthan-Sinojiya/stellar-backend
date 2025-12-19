@@ -27,7 +27,7 @@ const generateOtp = () =>
    POST /api/demo-call/send-otp
    - Sends OTP using AWS SNS
 ------------------------------------------------------------------ */
-export const sendOtp = asyncHandler(async (req, res) => {
+export const sendDemoCallOtp = asyncHandler(async (req, res) => {
   const { mobile } = req.body;
 
   if (!mobile || mobile.length !== 10) {
@@ -37,7 +37,7 @@ export const sendOtp = asyncHandler(async (req, res) => {
 
   const otp = generateOtp();
 
-  await sendOtp(mobile, otp);
+  await sendSnsOtp(mobile, otp);
 
   await Otp.findOneAndUpdate(
     { mobile },
@@ -45,16 +45,14 @@ export const sendOtp = asyncHandler(async (req, res) => {
     { upsert: true }
   );
 
-  res.status(200).json({
-    message: "OTP sent successfully",
-  });
+  res.status(200).json({ message: "OTP sent successfully" });
 });
 
 /* ------------------------------------------------------------------
    POST /api/demo-call/verify-otp
    - Verifies OTP (MongoDB + TTL)
 ------------------------------------------------------------------ */
-export const verifyOtp = asyncHandler(async (req, res) => {
+export const verifyDemoCallOtp = asyncHandler(async (req, res) => {
   const { mobile, otp } = req.body;
 
   const record = await Otp.findOne({ mobile });
@@ -71,9 +69,7 @@ export const verifyOtp = asyncHandler(async (req, res) => {
 
   await Otp.deleteOne({ mobile });
 
-  res.status(200).json({
-    message: "OTP verified successfully",
-  });
+  res.status(200).json({ message: "OTP verified successfully" });
 });
 
 /* ------------------------------------------------------------------
