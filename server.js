@@ -33,6 +33,7 @@ import otpRoutes from "./routes/otp.js";
 import userRoutes from "./routes/userRoutes.js";
 import demoCallRoutes from "./routes/demoCallRoutes.js";
 import applicationRoutes from "./routes/applicationRoutes.js";
+import settingsRoutes from "./routes/settingsRoutes.js";
 
 // Global error middleware
 import { errorHandler } from "./middleware/errorHandler.js";
@@ -64,6 +65,7 @@ app.use(
    - Enables Express to read JSON request bodies
 ------------------------------------------------------------------ */
 app.use(express.json());
+app.use("/uploads", express.static("uploads"));
 
 /* ------------------------------------------------------------------
    ROUTES
@@ -82,6 +84,8 @@ app.use("/api/otp", otpRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/demo-call", demoCallRoutes);
 app.use("/api/applications", applicationRoutes);
+app.use("/api/settings", settingsRoutes);
+
 /* ------------------------------------------------------------------
    GLOBAL ERROR HANDLER
    - Must be last middleware

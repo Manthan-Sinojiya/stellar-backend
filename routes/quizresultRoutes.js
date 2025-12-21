@@ -39,7 +39,7 @@ router.get(
     const result = await QuizResult.findOne({
       userId: req.user.id,
       quizId: req.params.quizId,
-    });
+    }).populate("quizId", "title category");
 
     if (!result) {
       return res.status(404).json({
@@ -59,9 +59,9 @@ router.get(
   "/my-results",
   protect,
   asyncHandler(async (req, res) => {
-    const results = await QuizResult.find({ userId: req.user.id }).sort({
-      createdAt: -1,
-    });
+    const results = await QuizResult.find({ userId: req.user.id })
+      .populate("quizId", "title category")
+      .sort({ createdAt: -1 });
 
     res.json({ success: true, results });
   })

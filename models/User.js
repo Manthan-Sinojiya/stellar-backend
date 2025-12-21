@@ -30,6 +30,14 @@ const userSchema = new mongoose.Schema(
     password: { type: String },
 
     // Optional profile details
+    gender: {
+      type: String,
+      enum: ["Male", "Female", "Other"],
+    },
+
+    dob: {
+      type: Date,
+    },
     address1: String,
     address2: String,
     city: String,
@@ -40,6 +48,9 @@ const userSchema = new mongoose.Schema(
     // OTP verification flag
     isVerified: { type: Boolean, default: false },
 
+    // Reset password OTP
+    resetOtp: String,
+    resetOtpExpiry: Date,
     // Role-based permissions
     role: { type: String, enum: ["admin", "user"], default: "user" },
   },

@@ -1,22 +1,11 @@
 /**
- * ------------------------------------------------------------------
- * Request Validation Handler (express-validator)
- * ------------------------------------------------------------------
- * Purpose:
- * - Reads validation errors set by express-validator
- * - Formats them into a clean array of messages
- * - Throws a single combined error message (handled globally)
- *
- * Why throw new Error?
- * - Ensures global errorHandler formats the validation response
- * - Keeps routes/controllers clean
- *
- * Example Response:
- * {
- *   success: false,
- *   message: "Full name required, Email invalid"
- * }
- * ------------------------------------------------------------------
+ * ---------------------------------------------------------
+ * VALIDATION HANDLER
+ * ---------------------------------------------------------
+ * - Reads errors from express-validator
+ * - Combines them into ONE clean message
+ * - Throws error → handled by global errorHandler
+ * ---------------------------------------------------------
  */
 
 import { validationResult } from "express-validator";
@@ -24,13 +13,13 @@ import { validationResult } from "express-validator";
 export const validate = (req, res, next) => {
   const errors = validationResult(req);
 
-  // If validation errors exist
   if (!errors.isEmpty()) {
-    const formatted = errors.array().map((err) => err.msg);
+    const message = errors.array().map(err => err.msg).join(", ");
 
-    // Throw error instead of sending response
-    const error = new Error(formatted.join(", "));
-    error.status = 400; // HTTP Bad Request
+    const error = new Error(message);
+    error.statusCode = 400;
+    error.code = "VALIDATION_ERROR";
+
     throw error;
   }
 

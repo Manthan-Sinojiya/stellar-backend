@@ -36,6 +36,12 @@ export const registerUser = asyncHandler(async (req, res) => {
     throw new Error("Email already registered");
   }
 
+  const existingMobile = await User.findOne({ mobile });
+if (existingMobile) {
+  res.status(400);
+  throw new Error("Mobile number already registered");
+}
+
   const hashedPassword = await bcrypt.hash(password, 10);
 
   const user = await User.create({

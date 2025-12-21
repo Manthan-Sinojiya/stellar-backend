@@ -1,61 +1,44 @@
 /**
- * ------------------------------------------------------------------
- * Authentication & Authorization Middleware
- * ------------------------------------------------------------------
- * protect()
- * - Extracts JWT from Authorization header ("Bearer <token>")
- * - Verifies token using JWT_SECRET
- * - Attaches decoded payload to req.user
- * - Throws 401 on missing/invalid token
+ * ---------------------------------------------------------
+ * AUTHENTICATION & AUTHORIZATION
+ * ---------------------------------------------------------
+ * protect():
+ * - Checks JWT token
+ * - Attaches user info to req.user
  *
- * adminOnly()
- * - Ensures only admin users can access protected endpoints
- * - Throws 403 if req.user.role is not "admin"
- *
- * Best Practices:
- * - No try/catch; asyncHandler + errorHandler manage errors globally.
- * - Minimal logic inside middleware; only access control and validation.
- * ------------------------------------------------------------------
+ * adminOnly():
+ * - Allows access only to admin users
+ * ---------------------------------------------------------
  */
 
 import jwt from "jsonwebtoken";
 import asyncHandler from "express-async-handler";
 
-/* ------------------------------------------------------------------
-   PROTECT MIDDLEWARE
-   - Validates JWT
-   - Must be applied before routes that require authentication
------------------------------------------------------------------- */
+/* -------------------- AUTH CHECK -------------------- */
 export const protect = asyncHandler(async (req, res, next) => {
-  // Expect header format: Authorization: Bearer <token>
-  const authHeader = req.headers.authorization || "";
-  const token = authHeader.startsWith("Bearer ")
-    ? authHeader.split(" ")[1]
-    : null;
+  const authHeader = req.headers.authorization;
 
-  if (!token) {
-    res.status(401);
-    throw new Error("No token provided");
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    const err = new Error("Authentication token missing");
+    err.statusCode = 401;
+    err.code = "TOKEN_MISSING";
+    throw err;
   }
 
-  // Verifies token; throws automatically on invalid signature
+  const token = authHeader.split(" ")[1];
   const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-  // Attach decoded payload (id, role, etc.) to request
-  req.user = decoded;
-
+  req.user = decoded; // { id, role }
   next();
 });
 
-/* ------------------------------------------------------------------
-   ADMIN-ONLY ACCESS CONTROL
-   - Ensures that req.user exists and role === 'admin'
-   - Use after protect() middleware
------------------------------------------------------------------- */
+/* -------------------- ADMIN CHECK -------------------- */
 export const adminOnly = (req, res, next) => {
-  if (!req.user || req.user.role !== "admin") {
-    res.status(403);
-    throw new Error("Admin Access Denied");
+  if (req.user?.role !== "admin") {
+    const err = new Error("Admin access denied");
+    err.statusCode = 403;
+    err.code = "ADMIN_ONLY";
+    throw err;
   }
   next();
 };

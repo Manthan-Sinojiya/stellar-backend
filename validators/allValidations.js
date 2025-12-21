@@ -62,7 +62,7 @@ export const registerValidation = [
 
   body("address1")
     .isLength({ min: 5 })
-    .withMessage("Address line 1 must be at least 5 characters"),
+    .withMessage("Address line 1 must be at least 4 characters"),
 
   body("city")
     .matches(nameRegex)
