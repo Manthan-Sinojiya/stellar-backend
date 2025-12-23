@@ -130,27 +130,27 @@ export const addCertification = asyncHandler(async (req, res) => {
    POST /api/application/interview
    Step-5: Schedule interview
 ------------------------------------------------------------------ */
-export const scheduleInterview = asyncHandler(async (req, res) => {
-  const { interviewDate } = req.body;
+// export const scheduleInterview = asyncHandler(async (req, res) => {
+//   const { interviewDate } = req.body;
 
-  if (!interviewDate) {
-    res.status(400);
-    throw new Error("Interview date required");
-  }
+//   if (!interviewDate) {
+//     res.status(400);
+//     throw new Error("Interview date required");
+//   }
 
-  await ApplicationProgress.findOneAndUpdate(
-    { userId: req.user.id },
-    {
-      interviewDate,
-      step5Completed: true,
-    }
-  );
+//   await ApplicationProgress.findOneAndUpdate(
+//     { userId: req.user.id },
+//     {
+//       interviewDate,
+//       step5Completed: true,
+//     }
+//   );
 
-  res.json({
-    success: true,
-    message: "Interview scheduled successfully",
-  });
-});
+//   res.json({
+//     success: true,
+//     message: "Interview scheduled successfully",
+//   });
+// });
 
 /* ------------------------------------------------------------------
    GET /api/application/progress
@@ -229,31 +229,39 @@ export const updateProfile = asyncHandler(async (req, res) => {
 
 //Final Submit API
 
-export const finalizeApplication = asyncHandler(async (req, res) => {
-  const user = req.user;
+export const scheduleInterview = asyncHandler(async (req, res) => {
+  const { interviewDate } = req.body;
 
-  const pdfBuffer = await generateApplicationPDF({
-    ...user,
-    interviewDate: req.body.date,
-    quizSummary: "Completed",
-  });
+  if (!interviewDate) {
+    res.status(400);
+    throw new Error("Interview date required");
+  }
 
-  const uploadStream = gridFSBucket.openUploadStream(
-    `application_${user._id}.pdf`
+  // Mark Step-5 completed
+  await ApplicationProgress.findOneAndUpdate(
+    { userId: req.user.id },
+    {
+      interviewDate,
+      step5Completed: true,
+    },
+    { upsert: true }
   );
 
-  uploadStream.end(pdfBuffer);
+  // Create or update application
+  let application = await Application.findOne({ userId: req.user.id });
 
-  uploadStream.on("finish", async () => {
-    await Application.create({
-      userId: user._id,
-      interviewDate: req.body.date,
-      pdfFileId: uploadStream.id,
+  if (!application) {
+    application = await Application.create({
+      userId: req.user.id,
+      interviewDate,
     });
+  } else {
+    application.interviewDate = interviewDate;
+    await application.save();
+  }
 
-    res.json({
-      success: true,
-      pdfId: uploadStream.id,
-    });
+  res.json({
+    success: true,
+    applicationId: application._id, // ✅ REQUIRED BY FRONTEND
   });
 });

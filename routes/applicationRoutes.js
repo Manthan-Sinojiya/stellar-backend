@@ -44,4 +44,23 @@ router.post("/certification", protect, addCertification);
 // STEP 5 – interview
 router.post("/interview", protect, scheduleInterview);
 
+router.get(
+  "/application/:id/pdf",
+  protect,
+  async (req, res) => {
+    const application = await Application.findById(req.params.id);
+
+    if (!application || !application.pdfFileId) {
+      return res.status(404).json({ message: "PDF not found" });
+    }
+
+    const downloadStream =
+      req.app.locals.gridFSBucket.openDownloadStream(
+        application.pdfFileId
+      );
+
+    res.set("Content-Type", "application/pdf");
+    downloadStream.pipe(res);
+  }
+);
 export default router;
