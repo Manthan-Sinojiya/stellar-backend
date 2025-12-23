@@ -194,14 +194,15 @@ export const googleAuth = asyncHandler(async (req, res) => {
    PUT /api/auth/complete-profile
 ------------------------------------------------------------------ */
 export const completeProfile = asyncHandler(async (req, res) => {
-  const { mobile, address1, city, state, pincode } = req.body;
+  let { mobile, address1, city, state, pincode } = req.body;
 
   if (!mobile || !address1 || !city || !state || !pincode) {
     res.status(400);
     throw new Error("All profile fields are required");
   }
 
-  // 🔥 FIX: Exclude current user from duplicate check
+  mobile = mobile.trim();
+
   const mobileExists = await User.findOne({
     mobile,
     _id: { $ne: req.user.id },
@@ -224,7 +225,6 @@ export const completeProfile = asyncHandler(async (req, res) => {
 
   await user.save();
 
-  res.json({
-    message: "Profile completed successfully",
-  });
+  res.json({ message: "Profile completed successfully" });
 });
+
