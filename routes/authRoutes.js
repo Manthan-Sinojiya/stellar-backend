@@ -20,6 +20,7 @@ import {
   registerUser,
   loginUser,
   googleAuth,
+  completeProfile,
 } from "../controllers/authController.js";
 import { protect, adminOnly } from "../middleware/authMiddleware.js";
 import {
@@ -53,6 +54,13 @@ router.post("/login", loginValidation, validate, loginUser);
 router.post("/google", googleAuth);
 
 /* ------------------------------------------------------------------
+   Google OAuth Login
+   - Frontend sends OAuth "code"
+   - Backend exchanges for Google profile + issues JWT
+------------------------------------------------------------------ */
+router.put("/complete-profile", protect, completeProfile);
+
+/* ------------------------------------------------------------------
    Protected Admin Dashboard Check
    - Demonstrates protect + adminOnly middleware usage
 ------------------------------------------------------------------ */
@@ -65,6 +73,10 @@ router.get("/admin-dashboard", protect, adminOnly, (req, res) => {
    - Any logged-in user can access
 ------------------------------------------------------------------ */
 router.get("/user-dashboard", protect, (req, res) => {
+   if(!req.user.profileCompleted){
+      res.status(400);
+      throw new Error("Please complete your profile to access the Dashboard");
+   }
   res.json({ message: "User Dashboard Access Granted" });
 });
 

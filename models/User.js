@@ -53,6 +53,8 @@ const userSchema = new mongoose.Schema(
     resetOtpExpiry: Date,
     // Role-based permissions
     role: { type: String, enum: ["admin", "user"], default: "user" },
+    profileCompleted: { type: Boolean, default: false }
+
   },
   { timestamps: true } // createdAt, updatedAt auto-generation
 );

@@ -28,7 +28,19 @@ import { oauth2Client } from "../utils/googleClient.js";
    - Standard user registration
 ------------------------------------------------------------------ */
 export const registerUser = asyncHandler(async (req, res) => {
-  const { fullName, fatherName, email, mobile, password, pincode, city, state, address1, address2, role } = req.body;
+  const {
+    fullName,
+    fatherName,
+    email,
+    mobile,
+    password,
+    pincode,
+    city,
+    state,
+    address1,
+    address2,
+    role,
+  } = req.body;
 
   const exists = await User.findOne({ email });
   if (exists) {
@@ -37,10 +49,10 @@ export const registerUser = asyncHandler(async (req, res) => {
   }
 
   const existingMobile = await User.findOne({ mobile });
-if (existingMobile) {
-  res.status(400);
-  throw new Error("Mobile number already registered");
-}
+  if (existingMobile) {
+    res.status(400);
+    throw new Error("Mobile number already registered");
+  }
 
   const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -172,5 +184,38 @@ export const googleAuth = asyncHandler(async (req, res) => {
       email: user.email,
       mobile: user.mobile || null,
     },
+  });
+});
+
+/* ------------------------------------------------------------------
+   PUT /api/auth/complete-profile
+------------------------------------------------------------------ */
+export const completeProfile = asyncHandler(async (req, res) => {
+  const { mobile, address1, city, state, pincode } = req.body;
+
+  if (!mobile || !address1 || !city || !state || !pincode) {
+    res.status(400);
+    throw new Error("All profile fields are required");
+  }
+
+  if (await User.findOne({ mobile })) {
+    res.status(400);
+    throw new Error("Mobile number already in use");
+  }
+
+  const user = await User.findById(req.user.id);
+
+  user.mobile = mobile;
+  user.address1 = address1;
+  user.city = city;
+  user.state = state;
+  user.pincode = pincode;
+  user.profileCompleted = true;
+  user.isVerified = true;
+
+  await user.save();
+
+  res.json({
+    message: "Profile completed successfully",
   });
 });
