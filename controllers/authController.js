@@ -186,7 +186,6 @@ export const googleAuth = asyncHandler(async (req, res) => {
       id: user._id,
       fullName: user.fullName,
       email: user.email,
-      mobile: user.mobile || null,
     },
   });
 });
