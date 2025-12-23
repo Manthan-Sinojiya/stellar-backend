@@ -24,7 +24,7 @@ const userSchema = new mongoose.Schema(
 
     // Unique identifiers
     email: { type: String, unique: true },
-    mobile: { type: String, unique: true },
+    mobile: { type: String, unique: true, sparse: true, },
 
     // Hashed password (bcrypt)
     password: { type: String },
