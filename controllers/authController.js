@@ -202,9 +202,15 @@ export const completeProfile = asyncHandler(async (req, res) => {
     throw new Error("All profile fields are required");
   }
 
-  if (await User.findOne({ mobile })) {
+  // 🔥 FIX: Exclude current user from duplicate check
+  const mobileExists = await User.findOne({
+    mobile,
+    _id: { $ne: req.user.id },
+  });
+
+  if (mobileExists) {
     res.status(400);
-    throw new Error("Mobile number already in use");
+    throw new Error("This mobile number is already registered");
   }
 
   const user = await User.findById(req.user.id);
