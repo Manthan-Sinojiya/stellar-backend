@@ -178,6 +178,7 @@ export const googleAuth = asyncHandler(async (req, res) => {
     token,
     role: user.role,
     phoneRequired: !user.mobile,
+    profileCompleted: user.profileCompleted,
     user: {
       id: user._id,
       fullName: user.fullName,
