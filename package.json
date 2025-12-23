@@ -250,6 +250,7 @@
     "path-scurry": "^1.11.1",
     "path-to-regexp": "^8.3.0",
     "pause": "^0.0.1",
+    "pdfkit": "^0.17.2",
     "picocolors": "^1.1.1",
     "picomatch": "^4.0.3",
     "postcss": "^8.5.6",
