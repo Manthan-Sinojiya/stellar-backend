@@ -69,6 +69,7 @@ export const registerUser = asyncHandler(async (req, res) => {
     address2,
     role: role || "user",
     isVerified: true, // OTP verified before register
+    profileCompleted: true,  // all details provided at registration
   });
 
   res.status(201).json({
@@ -110,6 +111,8 @@ export const loginUser = asyncHandler(async (req, res) => {
     message: "Login successful",
     token,
     role: user.role,
+    profileCompleted: user.profileCompleted,
+    isVerified: user.isVerified,
   });
 });
 
