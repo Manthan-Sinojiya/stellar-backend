@@ -226,3 +226,34 @@ export const updateProfile = asyncHandler(async (req, res) => {
     message: "Profile updated successfully",
   });
 });
+
+//Final Submit API
+
+export const finalizeApplication = asyncHandler(async (req, res) => {
+  const user = req.user;
+
+  const pdfBuffer = await generateApplicationPDF({
+    ...user,
+    interviewDate: req.body.date,
+    quizSummary: "Completed",
+  });
+
+  const uploadStream = gridFSBucket.openUploadStream(
+    `application_${user._id}.pdf`
+  );
+
+  uploadStream.end(pdfBuffer);
+
+  uploadStream.on("finish", async () => {
+    await Application.create({
+      userId: user._id,
+      interviewDate: req.body.date,
+      pdfFileId: uploadStream.id,
+    });
+
+    res.json({
+      success: true,
+      pdfId: uploadStream.id,
+    });
+  });
+});
