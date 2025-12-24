@@ -8,6 +8,40 @@ const generateOtp = () =>
   Math.floor(100000 + Math.random() * 900000).toString();
 
 /* =====================================================
+   UPDATE PASSWORD (Logged-in user)
+   PUT /api/settings/update-password
+===================================================== */
+export const updatePassword = asyncHandler(async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+
+  if (!currentPassword || !newPassword) {
+    res.status(400);
+    throw new Error("All fields are required");
+  }
+
+  const user = await User.findById(req.user.id).select("+password");
+
+  if (!user) {
+    res.status(404);
+    throw new Error("User not found");
+  }
+
+  const isMatch = await bcrypt.compare(currentPassword, user.password);
+  if (!isMatch) {
+    res.status(400);
+    throw new Error("Current password is incorrect");
+  }
+
+  user.password = await bcrypt.hash(newPassword, 12);
+  await user.save();
+
+  res.json({
+    success: true,
+    message: "Password updated successfully",
+  });
+});
+
+/* =====================================================
    SEND RESET OTP
    POST /api/settings/reset-password/send-otp
 ===================================================== */
