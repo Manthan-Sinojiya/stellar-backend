@@ -56,7 +56,7 @@ const app = express();
 ------------------------------------------------------------------ */
 app.use(
   cors({
-    origin: ["https://stellarcampus.com"],
+    origin: ["https://stellarcampus.com", "https://d1xgi380kxuazw.cloudfront.net/"],
     methods: ["GET", "HEAD", "POST", "OPTIONS", "PUT", "PATCH", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
