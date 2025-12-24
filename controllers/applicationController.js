@@ -3,6 +3,7 @@ import User from "../models/User.js";
 import Education from "../models/Education.js";
 import Certification from "../models/Certification.js";
 import ApplicationProgress from "../models/ApplicationProgress.js";
+import Application from "../models/ApplicationSchema.js";
 
 /* ------------------------------------------------------------------
    GET /api/application/profile

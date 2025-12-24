@@ -10,7 +10,8 @@ import {
   scheduleInterview,
   completeProfileStep,
     completeAptitudeStep,
-    updateProfile,   // ✅ ADD
+    updateProfile, 
+    Application,  // ✅ ADD
 } from "../controllers/applicationController.js";
 
 const router = express.Router();
