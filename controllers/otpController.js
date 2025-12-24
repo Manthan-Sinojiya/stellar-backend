@@ -39,7 +39,7 @@ export const registerUser = asyncHandler(async (req, res) => {
 
   const otp = generateOtp();
 
-  await sendOtp(mobile, otp);
+  await sendOtp(mobile, otp,  "REGISTRATION");
 
   await Otp.findOneAndUpdate(
     { mobile },

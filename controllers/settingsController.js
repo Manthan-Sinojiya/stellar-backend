@@ -1,36 +1,11 @@
 import asyncHandler from "express-async-handler";
-import bcrypt from "bcryptjs";
 import crypto from "crypto";
+import bcrypt from "bcryptjs";
 import User from "../models/User.js";
+import { sendOtp } from "../services/awsSnsService.js";
 
-/* =====================================================
-   UPDATE PASSWORD (Logged-in user)
-   PUT /api/settings/update-password
-===================================================== */
-export const updatePassword = asyncHandler(async (req, res) => {
-  const { currentPassword, newPassword } = req.body;
-
-  if (!currentPassword || !newPassword) {
-    res.status(400);
-    throw new Error("All fields are required");
-  }
-
-  const user = await User.findById(req.user.id).select("+password");
-
-  const isMatch = await bcrypt.compare(currentPassword, user.password);
-  if (!isMatch) {
-    res.status(400);
-    throw new Error("Current password is incorrect");
-  }
-
-  user.password = await bcrypt.hash(newPassword, 12);
-  await user.save();
-
-  res.json({
-    success: true,
-    message: "Password updated successfully",
-  });
-});
+const generateOtp = () =>
+  Math.floor(100000 + Math.random() * 900000).toString();
 
 /* =====================================================
    SEND RESET OTP
@@ -50,7 +25,7 @@ export const sendResetPasswordOtp = asyncHandler(async (req, res) => {
     throw new Error("Mobile number not registered");
   }
 
-  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  const otp = generateOtp();
 
   const hashedOtp = crypto
     .createHash("sha256")
@@ -62,10 +37,8 @@ export const sendResetPasswordOtp = asyncHandler(async (req, res) => {
 
   await user.save();
 
-  // 🔔 Integrate SMS service here
-  // await sendOtpSms(mobile, otp);
-
-  console.log("RESET OTP (DEV ONLY):", otp);
+  // ✅ Send OTP via AWS SNS
+  await sendOtp(mobile, otp, "RESET_PASSWORD");
 
   res.json({
     success: true,
