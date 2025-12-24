@@ -162,14 +162,15 @@ export const scheduleInterview = asyncHandler(async (req, res) => {
     throw new Error("Interview date required");
   }
 
+  // 1. Update Progress
   await ApplicationProgress.findOneAndUpdate(
     { userId: req.user.id },
     { step5Completed: true, interviewDate },
     { upsert: true }
   );
 
+  // 2. Update or Create Application Record
   let application = await Application.findOne({ userId: req.user.id });
-
   if (!application) {
     application = await Application.create({
       userId: req.user.id,
@@ -180,22 +181,25 @@ export const scheduleInterview = asyncHandler(async (req, res) => {
     await application.save();
   }
 
+  // 3. Generate PDF Buffer
   const user = await User.findById(req.user.id);
-
   const pdfBuffer = await generateApplicationPDF({
     ...user.toObject(),
     interviewDate,
     quizSummary: "Completed",
   });
 
+  // 4. Stream Buffer to GridFS
   const bucket = req.app.locals.gridFSBucket;
   const uploadStream = bucket.openUploadStream(
-    `application_${application._id}.pdf`
+    `application_${application._id}.pdf`,
+    { contentType: 'application/pdf' }
   );
 
   uploadStream.end(pdfBuffer);
 
   uploadStream.on("finish", async () => {
+    // 5. Link the GridFS File ID to the Application model
     application.pdfFileId = uploadStream.id;
     await application.save();
 
@@ -203,6 +207,11 @@ export const scheduleInterview = asyncHandler(async (req, res) => {
       success: true,
       applicationId: application._id,
     });
+  });
+
+  uploadStream.on("error", (err) => {
+    res.status(500);
+    throw new Error("PDF Storage Failed: " + err.message);
   });
 });
 
@@ -234,80 +243,7 @@ export const getApplicationPDF = asyncHandler(async (req, res) => {
 /* ------------------------------------------------
    GET APPLICATION PDF
 ------------------------------------------------- */
-import PDFDocument from 'pdfkit';
-import path from 'path';
 
-export const generateApplicationPDF = async (req, res) => {
-  const { applicationId } = req.params;
-  const application = await Application.findById(applicationId).populate('userId');
-
-  const doc = new PDFDocument({ margin: 50, size: 'A4' });
-
-  // Response Headers
-  res.setHeader('Content-Type', 'application/pdf');
-  doc.pipe(res);
-
-  // --- PDF STYLING & UI ---
-
-  // 1. HEADER WITH LOGO
-  doc.rect(0, 0, 612, 120).fill('#0f172a'); // Dark Slate Background
-  
-  const logoPath = path.join(process.cwd(), 'public', 'favicon_io', 'logo.png');
-  try {
-    doc.image(logoPath, 50, 30, { width: 60 });
-  } catch (e) {
-    doc.fillColor('#ab45ff').fontSize(24).text('STELLAR', 50, 45);
-  }
-
-  doc.fillColor('#ffffff')
-     .fontSize(20)
-     .font('Helvetica-Bold')
-     .text('APPLICATION SUMMARY', 130, 45, { characterSpacing: 2 });
-
-  doc.fillColor('#94a3b8')
-     .fontSize(8)
-     .text(`ID: ${applicationId.toUpperCase()}`, 130, 70);
-
-  // 2. TABLE GENERATOR FUNCTION
-  const drawTableRow = (y, label, value, isHeader = false) => {
-    if (isHeader) {
-      doc.rect(50, y, 500, 25).fill('#ab45ff');
-      doc.fillColor('#ffffff').font('Helvetica-Bold').fontSize(10).text(label, 65, y + 8);
-    } else {
-      doc.rect(50, y, 500, 30).fill('#f8fafc');
-      doc.rect(50, y, 500, 30).stroke('#e2e8f0');
-      doc.fillColor('#64748b').font('Helvetica-Bold').fontSize(9).text(label.toUpperCase(), 65, y + 10);
-      doc.fillColor('#1e293b').font('Helvetica').fontSize(10).text(value || 'NOT PROVIDED', 220, y + 10);
-    }
-  };
-
-  // 3. RENDER DATA TABLE
-  let currentY = 160;
-  drawTableRow(currentY, 'PERSONAL CREDENTIALS', null, true);
-  
-  const data = [
-    { label: 'Full Name', value: application.userId.name },
-    { label: 'Father Name', value: application.userId.fatherName },
-    { label: 'Email Address', value: application.userId.email },
-    { label: 'Mobile Number', value: application.userId.mobile },
-    { label: 'Residential City', value: application.userId.city },
-    { label: 'Application Status', value: 'SUBMITTED' },
-    { label: 'Scheduled Interview', value: application.interviewDate },
-  ];
-
-  data.forEach((item) => {
-    currentY += 30;
-    drawTableRow(currentY, item.label, item.value);
-  });
-
-  // 4. FOOTER
-  doc.fontSize(8).fillColor('#94a3b8').text(
-    'This is a system-generated encrypted document. © 2025 Stellar Institute of Technology',
-    50, 780, { align: 'center' }
-  );
-
-  doc.end();
-};
 /* ------------------------------------------------------------------
    GET /api/application/progress
    Fetch step completion status
