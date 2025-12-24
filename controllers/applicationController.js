@@ -153,6 +153,61 @@ export const addCertification = asyncHandler(async (req, res) => {
 //   });
 // });
 
+/* ------------------------------------------------
+   STEP 5 – Schedule Interview + Create Application
+------------------------------------------------- */
+export const scheduleInterview = asyncHandler(async (req, res) => {
+  const { interviewDate } = req.body;
+
+  if (!interviewDate) {
+    res.status(400);
+    throw new Error("Interview date is required");
+  }
+
+  // Update progress
+  await ApplicationProgress.findOneAndUpdate(
+    { userId: req.user.id },
+    { interviewDate, step5Completed: true },
+    { upsert: true }
+  );
+
+  // Create or update application
+  let application = await Application.findOne({ userId: req.user.id });
+
+  if (!application) {
+    application = await Application.create({
+      userId: req.user.id,
+      interviewDate,
+    });
+  } else {
+    application.interviewDate = interviewDate;
+    await application.save();
+  }
+
+  res.json({
+    success: true,
+    applicationId: application._id,
+  });
+});
+
+/* ------------------------------------------------
+   GET APPLICATION PDF
+------------------------------------------------- */
+export const getApplicationPDF = asyncHandler(async (req, res) => {
+  const application = await Application.findById(req.params.id);
+
+  if (!application || !application.pdfFileId) {
+    res.status(404);
+    throw new Error("PDF not found");
+  }
+
+  const bucket = req.app.locals.gridFSBucket;
+  const stream = bucket.openDownloadStream(application.pdfFileId);
+
+  res.set("Content-Type", "application/pdf");
+  stream.pipe(res);
+});
+
 /* ------------------------------------------------------------------
    GET /api/application/progress
    Fetch step completion status
@@ -228,41 +283,3 @@ export const updateProfile = asyncHandler(async (req, res) => {
   });
 });
 
-//Final Submit API
-
-export const scheduleInterview = asyncHandler(async (req, res) => {
-  const { interviewDate } = req.body;
-
-  if (!interviewDate) {
-    res.status(400);
-    throw new Error("Interview date required");
-  }
-
-  // Mark Step-5 completed
-  await ApplicationProgress.findOneAndUpdate(
-    { userId: req.user.id },
-    {
-      interviewDate,
-      step5Completed: true,
-    },
-    { upsert: true }
-  );
-
-  // Create or update application
-  let application = await Application.findOne({ userId: req.user.id });
-
-  if (!application) {
-    application = await Application.create({
-      userId: req.user.id,
-      interviewDate,
-    });
-  } else {
-    application.interviewDate = interviewDate;
-    await application.save();
-  }
-
-  res.json({
-    success: true,
-    applicationId: application._id, // ✅ REQUIRED BY FRONTEND
-  });
-});
