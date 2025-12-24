@@ -217,9 +217,19 @@ export const getApplicationPDF = asyncHandler(async (req, res) => {
   const bucket = req.app.locals.gridFSBucket;
   const stream = bucket.openDownloadStream(application.pdfFileId);
 
-  res.set("Content-Type", "application/pdf");
+  res.set({
+    "Content-Type": "application/pdf",
+    "Content-Disposition": `inline; filename="application_${application._id}.pdf"`,
+    "Cache-Control": "no-store",
+  });
+
+  stream.on("error", () => {
+    res.status(500).end();
+  });
+
   stream.pipe(res);
 });
+
 
 /* ------------------------------------------------
    GET APPLICATION PDF
