@@ -21,6 +21,8 @@
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
+import mongoose from "mongoose";
+import { GridFSBucket } from "mongodb";
 
 // Database connection
 import connectDB from "./config/db.js";
@@ -98,6 +100,15 @@ app.use(errorHandler);
    - Uses PORT from env file
    - Logs active port for debugging/monitoring
 ------------------------------------------------------------------ */
+ mongoose.connection.once("open", () => {
+    app.locals.gridFSBucket = new GridFSBucket(
+      mongoose.connection.db,
+      { bucketName: "application_pdfs" }
+    );
+
+    console.log("✅ GridFS Bucket initialized");
+  });
+  
 app.listen(process.env.PORT, () => {
   console.log(`Server running on port ${process.env.PORT}`);
 });

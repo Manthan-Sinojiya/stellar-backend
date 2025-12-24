@@ -1,37 +1,59 @@
 import PDFDocument from "pdfkit";
 
-export const generateApplicationPDF = async (student) => {
-  const doc = new PDFDocument({ size: "A4", margin: 50 });
-  const buffers = [];
+/**
+ * Generates Application PDF
+ * @param {Object} student - merged student + application data
+ * @returns {Promise<Buffer>}
+ */
+export const generateApplicationPDF = (student) => {
+  return new Promise((resolve, reject) => {
+    try {
+      const doc = new PDFDocument({ size: "A4", margin: 50 });
+      const buffers = [];
 
-  doc.on("data", buffers.push.bind(buffers));
-  doc.on("end", () => {});
+      doc.on("data", buffers.push.bind(buffers));
+      doc.on("end", () => {
+        resolve(Buffer.concat(buffers));
+      });
+      doc.on("error", reject);
 
-  doc.fontSize(18).text("Application Summary", { align: "center" });
-  doc.moveDown();
+      /* ---------- HEADER ---------- */
+      doc
+        .fontSize(18)
+        .text("Stellar Campus – Application Summary", { align: "center" });
 
-  doc.fontSize(12);
-  doc.text(`Full Name: ${student.fullName}`);
-  doc.text(`Father Name: ${student.fatherName}`);
-  doc.text(`Email: ${student.email}`);
-  doc.text(`Mobile: ${student.mobile}`);
-  doc.text(`Address: ${student.address1}, ${student.address2}`);
-  doc.text(`City: ${student.city}`);
-  doc.text(`State: ${student.state}`);
-  doc.text(`Pincode: ${student.pincode}`);
-  doc.moveDown();
+      doc.moveDown(2);
 
-  doc.text(`Education: ${student.education}`);
-  doc.text(`Quiz Attempted: ${student.quizSummary}`);
-  doc.text(`Final Interview Date: ${student.interviewDate}`);
-  doc.moveDown();
+      /* ---------- PERSONAL DETAILS ---------- */
+      doc.fontSize(12).text(`Full Name: ${student.fullName || "-"}`);
+      doc.text(`Father Name: ${student.fatherName || "-"}`);
+      doc.text(`Email: ${student.email || "-"}`);
+      doc.text(`Mobile: ${student.mobile || "-"}`);
+      doc.text(
+        `Address: ${student.address1 || ""} ${student.address2 || ""}`
+      );
+      doc.text(`City: ${student.city || "-"}`);
+      doc.text(`State: ${student.state || "-"}`);
+      doc.text(`Pincode: ${student.pincode || "-"}`);
 
-  doc.text(
-    "Our team will connect with you soon. You will be notified via email or SMS.",
-    { align: "center" }
-  );
+      doc.moveDown();
 
-  doc.end();
+      /* ---------- APPLICATION DETAILS ---------- */
+      doc.text(`Quiz Status: ${student.quizSummary || "Completed"}`);
+      doc.text(`Interview Date: ${student.interviewDate || "-"}`);
 
-  return Buffer.concat(buffers);
+      doc.moveDown(2);
+
+      doc
+        .fontSize(11)
+        .text(
+          "Our admissions team will contact you soon. Please check your email or SMS for further updates.",
+          { align: "center" }
+        );
+
+      doc.end();
+    } catch (err) {
+      reject(err);
+    }
+  });
 };

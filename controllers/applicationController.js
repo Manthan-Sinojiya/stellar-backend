@@ -4,6 +4,7 @@ import Education from "../models/Education.js";
 import Certification from "../models/Certification.js";
 import ApplicationProgress from "../models/ApplicationProgress.js";
 import Application from "../models/ApplicationSchema.js";
+import { generateApplicationPDF } from "../utils/generateApplicationPDF.js";
 
 /* ------------------------------------------------------------------
    GET /api/application/profile
@@ -153,25 +154,20 @@ export const addCertification = asyncHandler(async (req, res) => {
 //   });
 // });
 
-/* ------------------------------------------------
-   STEP 5 – Schedule Interview + Create Application
-------------------------------------------------- */
 export const scheduleInterview = asyncHandler(async (req, res) => {
   const { interviewDate } = req.body;
 
   if (!interviewDate) {
     res.status(400);
-    throw new Error("Interview date is required");
+    throw new Error("Interview date required");
   }
 
-  // Update progress
   await ApplicationProgress.findOneAndUpdate(
     { userId: req.user.id },
-    { interviewDate, step5Completed: true },
+    { step5Completed: true, interviewDate },
     { upsert: true }
   );
 
-  // Create or update application
   let application = await Application.findOne({ userId: req.user.id });
 
   if (!application) {
@@ -184,15 +180,32 @@ export const scheduleInterview = asyncHandler(async (req, res) => {
     await application.save();
   }
 
-  res.json({
-    success: true,
-    applicationId: application._id,
+  const user = await User.findById(req.user.id);
+
+  const pdfBuffer = await generateApplicationPDF({
+    ...user.toObject(),
+    interviewDate,
+    quizSummary: "Completed",
+  });
+
+  const bucket = req.app.locals.gridFSBucket;
+  const uploadStream = bucket.openUploadStream(
+    `application_${application._id}.pdf`
+  );
+
+  uploadStream.end(pdfBuffer);
+
+  uploadStream.on("finish", async () => {
+    application.pdfFileId = uploadStream.id;
+    await application.save();
+
+    res.json({
+      success: true,
+      applicationId: application._id,
+    });
   });
 });
 
-/* ------------------------------------------------
-   GET APPLICATION PDF
-------------------------------------------------- */
 export const getApplicationPDF = asyncHandler(async (req, res) => {
   const application = await Application.findById(req.params.id);
 
@@ -207,6 +220,10 @@ export const getApplicationPDF = asyncHandler(async (req, res) => {
   res.set("Content-Type", "application/pdf");
   stream.pipe(res);
 });
+
+/* ------------------------------------------------
+   GET APPLICATION PDF
+------------------------------------------------- */
 
 /* ------------------------------------------------------------------
    GET /api/application/progress
