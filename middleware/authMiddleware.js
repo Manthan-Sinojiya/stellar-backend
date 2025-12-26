@@ -1,44 +1,53 @@
-/**
- * ---------------------------------------------------------
- * AUTHENTICATION & AUTHORIZATION
- * ---------------------------------------------------------
- * protect():
- * - Checks JWT token
- * - Attaches user info to req.user
- *
- * adminOnly():
- * - Allows access only to admin users
- * ---------------------------------------------------------
- */
-
 import jwt from "jsonwebtoken";
 import asyncHandler from "express-async-handler";
 
-/* -------------------- AUTH CHECK -------------------- */
 export const protect = asyncHandler(async (req, res, next) => {
   const authHeader = req.headers.authorization;
 
+  // 1️⃣ Validate Authorization header existence & format
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    const err = new Error("Authentication token missing");
-    err.statusCode = 401;
-    err.code = "TOKEN_MISSING";
-    throw err;
+    return res.status(401).json({
+      message: "Authorization token missing",
+      code: "TOKEN_MISSING",
+    });
   }
 
   const token = authHeader.split(" ")[1];
-  const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-  req.user = decoded; // { id, role }
-  next();
+  // 2️⃣ Prevent malformed / undefined tokens
+  if (!token || token === "undefined" || token === "null") {
+    return res.status(401).json({
+      message: "Invalid authentication token",
+      code: "TOKEN_INVALID",
+    });
+  }
+
+  try {
+    // 3️⃣ Verify JWT
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    // Attach to request
+    req.user = decoded;
+    next();
+  } catch (err) {
+    console.error("JWT VERIFY ERROR:", err.message);
+
+    return res.status(401).json({
+      message: "Token expired or invalid",
+      code: "TOKEN_EXPIRED",
+    });
+  }
 });
 
-/* -------------------- ADMIN CHECK -------------------- */
+/* -------------------------------------------------- */
+/* ADMIN ONLY GUARD */
+/* -------------------------------------------------- */
 export const adminOnly = (req, res, next) => {
-  if (req.user?.role !== "admin") {
-    const err = new Error("Admin access denied");
-    err.statusCode = 403;
-    err.code = "ADMIN_ONLY";
-    throw err;
+  if (!req.user || req.user.role !== "admin") {
+    return res.status(403).json({
+      message: "Admin access required",
+      code: "ADMIN_ONLY",
+    });
   }
   next();
 };
