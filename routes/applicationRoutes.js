@@ -1,6 +1,7 @@
 import express from "express";
 import { protect } from "../middleware/authMiddleware.js";
 import { uploadMarksheet } from "../middleware/uploadMiddleware.js";
+import { uploadCertification } from "../middleware/uploadMiddleware.js";
 import {
   getProfile,
   getProgress,
