@@ -48,30 +48,24 @@ export const saveEducation = async (req, res) => {
     marksheetUrl,
   });
 
+  // IMPORTANT: Update application progress so Step 2 shows as done
+  await ApplicationProgress.findOneAndUpdate(
+    { userId: req.user.id },
+    { step2Completed: true },
+    { upsert: true }
+  );
+  
   res.json({ success: true, record });
 };
-
-export const getEducation = async (req, res) => {
-  const data = await Education.find({ userId: req.user.id });
-  res.json({ educations: data });
-};
-
-
 
 /* --------------------------------------------------
    GET /api/applications/education
    Fetch saved education records
 -------------------------------------------------- */
-// export const getEducation = asyncHandler(async (req, res) => {
-//   const educations = await Education.find({
-//     userId: req.user.id,
-//   }).sort({ createdAt: 1 });
-
-//   res.json({
-//     success: true,
-//     educations,
-//   });
-// });
+export const getEducation = async (req, res) => {
+  const data = await Education.find({ userId: req.user.id });
+  res.json({ educations: data });
+};
 
 /* ------------------------------------------------------------------
    POST /api/application/aptitude/complete
