@@ -36,7 +36,7 @@ import userRoutes from "./routes/userRoutes.js";
 import demoCallRoutes from "./routes/demoCallRoutes.js";
 import applicationRoutes from "./routes/applicationRoutes.js";
 import settingsRoutes from "./routes/settingsRoutes.js";
-
+import uploadRoutes from "./routes/uploadRoutes.js";
 // Global error middleware
 import { errorHandler } from "./middleware/errorHandler.js";
 
