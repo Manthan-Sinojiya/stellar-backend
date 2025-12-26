@@ -49,34 +49,53 @@ export const getProfile = asyncHandler(async (req, res) => {
 //   res.json({ success: true, message: "Education saved" });
 // });
 
-export const uploadEducationFile = asyncHandler(async (req, res) => {
-  const { level, percentage, cgpa, marksheetUrl } = req.body;
+export const uploadEducationFile = async (file) => {
+  const token = localStorage.getItem("token");
 
-  if (!marksheetUrl) {
-    res.status(400);
-    throw new Error("Marksheet URL missing");
+  if (!token) {
+    throw new Error("User not authenticated");
   }
 
-  await Education.create({
-    userId: req.user.id,
-    level,
-    percentage,
-    cgpa,
-    marksheetUrl,
+  // 1️⃣ Request presigned URL
+  const res = await fetch(
+    "https://d1xgi380kxuazw.cloudfront.net/api/upload/presigned-url",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        fileName: file.name,
+        fileType: file.type,
+        folder: "education",
+      }),
+    }
+  );
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error("Presign failed: " + err);
+  }
+
+  const { uploadUrl, fileUrl } = await res.json();
+
+  // 2️⃣ Upload to S3
+  const upload = await fetch(uploadUrl, {
+    method: "PUT",
+    headers: {
+      "Content-Type": file.type,
+    },
+    body: file,
   });
 
-  const count = await Education.countDocuments({ userId: req.user.id });
-
-  if (count >= 2) {
-    await ApplicationProgress.updateOne(
-      { userId: req.user.id },
-      { step2Completed: true },
-      { upsert: true }
-    );
+  if (!upload.ok) {
+    throw new Error("S3 upload failed");
   }
 
-  res.json({ success: true });
-});
+  return fileUrl;
+};
+
 
 
 /* --------------------------------------------------

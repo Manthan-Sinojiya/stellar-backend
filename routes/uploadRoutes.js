@@ -11,13 +11,9 @@ router.post("/presigned-url", protect, async (req, res) => {
     return res.status(400).json({ message: "Invalid file data" });
   }
 
-  const data = await getSignedUploadUrl({
-    fileName,
-    fileType,
-    folder,
-  });
-
+  const data = await getSignedUploadUrl({ fileName, fileType, folder });
   res.json(data);
 });
+
 
 export default router;
