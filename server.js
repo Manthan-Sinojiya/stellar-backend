@@ -115,3 +115,5 @@ app.listen(process.env.PORT, () => {
 });
 
 export default app;
+console.log("AWS_ACCESS_KEY:", process.env.AWS_ACCESS_KEY);
+console.log("AWS_REGION:", process.env.AWS_REGION);
