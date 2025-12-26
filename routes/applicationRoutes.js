@@ -33,7 +33,6 @@ router.get("/progress", protect, getProgress);
 router.post(
   "/education",
   protect,
-  uploadMarksheet.single("marksheet"),
   saveEducation
 );
 router.get("/education", protect, getEducation);

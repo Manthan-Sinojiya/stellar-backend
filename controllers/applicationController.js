@@ -50,11 +50,11 @@ export const getProfile = asyncHandler(async (req, res) => {
 // });
 
 export const saveEducation = asyncHandler(async (req, res) => {
-  const { level, percentage, cgpa } = req.body;
+  const { level, percentage, cgpa, marksheetUrl } = req.body;
 
-  if (!req.file) {
+  if (!marksheetUrl) {
     res.status(400);
-    throw new Error("Marksheet file is required");
+    throw new Error("Marksheet URL missing");
   }
 
   await Education.create({
@@ -62,7 +62,7 @@ export const saveEducation = asyncHandler(async (req, res) => {
     level,
     percentage,
     cgpa,
-    marksheetUrl: req.file.path,
+    marksheetUrl,
   });
 
   const count = await Education.countDocuments({ userId: req.user.id });
@@ -75,8 +75,9 @@ export const saveEducation = asyncHandler(async (req, res) => {
     );
   }
 
-  res.json({ success: true, message: "Education saved" });
+  res.json({ success: true });
 });
+
 
 /* --------------------------------------------------
    GET /api/applications/education
