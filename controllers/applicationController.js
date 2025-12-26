@@ -19,36 +19,6 @@ export const getProfile = asyncHandler(async (req, res) => {
    POST /api/application/education
    Step-2: Save 10th / 12th education
 ------------------------------------------------------------------ */
-// export const saveEducation = asyncHandler(async (req, res) => {
-//   const { level, percentage, cgpa, marksheetUrl } = req.body;
-
-//   if (!marksheetUrl) {
-//     res.status(400);
-//     throw new Error("Marksheet upload required");
-//   }
-
-//   await Education.create({
-//     userId: req.user.id,
-//     level,
-//     percentage,
-//     cgpa,
-//     marksheetUrl,
-//   });
-
-//   const eduCount = await Education.countDocuments({
-//     userId: req.user.id,
-//   });
-
-//   if (eduCount >= 2) {
-//     await ApplicationProgress.findOneAndUpdate(
-//       { userId: req.user.id },
-//       { step2Completed: true }
-//     );
-//   }
-
-//   res.json({ success: true, message: "Education saved" });
-// });
-
 export const uploadEducationFile = async (req, res) => {
   const { fileName, fileType, folder } = req.body;
 
