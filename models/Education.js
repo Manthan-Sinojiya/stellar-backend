@@ -2,17 +2,10 @@ import mongoose from "mongoose";
 
 const educationSchema = new mongoose.Schema(
   {
-    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-
-    level: {
-      type: String,
-      enum: ["10th", "12th"],
-      required: true,
-    },
-
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    level: { type: String, enum: ["10th", "12th"], required: true },
     percentage: Number,
     cgpa: Number,
-
     marksheetUrl: { type: String, required: true },
   },
   { timestamps: true }

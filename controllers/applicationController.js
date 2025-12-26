@@ -1,6 +1,5 @@
 import asyncHandler from "express-async-handler";
 import User from "../models/User.js";
-import Education from "../models/Education.js";
 import Certification from "../models/Certification.js";
 import ApplicationProgress from "../models/ApplicationProgress.js";
 import Application from "../models/ApplicationSchema.js";
@@ -48,73 +47,6 @@ export const getProfile = asyncHandler(async (req, res) => {
 
 //   res.json({ success: true, message: "Education saved" });
 // });
-
-export const uploadEducationFile = async (req, res) => {
-  try {
-    const { fileName, fileType, folder } = req.body;
-
-    if (!fileName || !fileType || !folder) {
-      return res.status(400).json({ message: "Invalid upload request" });
-    }
-
-    // User already authenticated via middleware
-    // req.user is available here
-    const userId = req.user.id;
-
-    const key = `${folder}/${userId}-${Date.now()}-${fileName}`;
-
-    const command = new PutObjectCommand({
-      Bucket: process.env.AWS_BUCKET,
-      Key: key,
-      ContentType: fileType,
-    });
-
-    const uploadUrl = await getSignedUrl(s3, command, { expiresIn: 300 });
-
-    return res.json({
-      uploadUrl,
-      fileUrl: `https://${process.env.AWS_BUCKET}.s3.amazonaws.com/${key}`,
-    });
-  } catch (error) {
-    console.error("UPLOAD ERROR:", error);
-    res.status(500).json({ message: "Upload failed" });
-  }
-};
-
-export const saveEducation = async (req, res) => {
-  const { level, percentage, cgpa, marksheetUrl } = req.body;
-
-  if (!marksheetUrl) {
-    return res.status(400).json({ message: "Marksheet URL missing" });
-  }
-
-  await Education.create({
-    userId: req.user.id,
-    level,
-    percentage,
-    cgpa,
-    marksheetUrl,
-  });
-
-  res.json({ success: true });
-};
-
-
-
-/* --------------------------------------------------
-   GET /api/applications/education
-   Fetch saved education records
--------------------------------------------------- */
-export const getEducation = asyncHandler(async (req, res) => {
-  const educations = await Education.find({
-    userId: req.user.id,
-  }).sort({ createdAt: 1 });
-
-  res.json({
-    success: true,
-    educations,
-  });
-});
 
 /* ------------------------------------------------------------------
    POST /api/application/aptitude/complete

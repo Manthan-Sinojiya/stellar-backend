@@ -1,12 +1,9 @@
 import express from "express";
 import { protect } from "../middleware/authMiddleware.js";
-import { uploadMarksheet } from "../middleware/uploadMiddleware.js";
 import { uploadCertification } from "../middleware/uploadMiddleware.js";
 import {
   getProfile,
   getProgress,
-  uploadEducationFile,
-  getEducation,
   addCertification,
   scheduleInterview,
   completeProfileStep,
@@ -28,11 +25,6 @@ router.put("/profile", protect, updateProfile);
 
 // STEP PROGRESS
 router.get("/progress", protect, getProgress);
-
-// STEP 2 – education
-router.post("/education", protect, saveEducation);
-
-router.get("/education", protect, getEducation);
 
 // STEP 3 – Aptitude (NEW)
 router.post("/aptitude/complete", protect, completeAptitudeStep);

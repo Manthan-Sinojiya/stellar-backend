@@ -37,6 +37,8 @@ import demoCallRoutes from "./routes/demoCallRoutes.js";
 import applicationRoutes from "./routes/applicationRoutes.js";
 import settingsRoutes from "./routes/settingsRoutes.js";
 import uploadRoutes from "./routes/uploadRoutes.js";
+import educationRoutes from "./routes/educationRoutes.js";
+
 // Global error middleware
 import { errorHandler } from "./middleware/errorHandler.js";
 
@@ -88,6 +90,7 @@ app.use("/api/demo-call", demoCallRoutes);
 app.use("/api/applications", applicationRoutes);
 app.use("/api/settings", settingsRoutes);
 app.use("/api/upload", uploadRoutes);
+app.use("/api/education", educationRoutes);
 
 /* ------------------------------------------------------------------
    GLOBAL ERROR HANDLER
@@ -115,5 +118,3 @@ app.listen(process.env.PORT, () => {
 });
 
 export default app;
-console.log("AWS_ACCESS_KEY:", process.env.AWS_ACCESS_KEY);
-console.log("AWS_REGION:", process.env.AWS_REGION);
