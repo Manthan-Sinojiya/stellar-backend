@@ -5,7 +5,7 @@ import Certification from "../models/Certification.js";
 import ApplicationProgress from "../models/ApplicationProgress.js";
 import Application from "../models/ApplicationSchema.js";
 import { generateApplicationPDF } from "../utils/generateApplicationPDF.js";
-
+import { getSignedUploadUrl } from "../utils/s3Utils.js"; // Adjust path as needed
 /* ------------------------------------------------------------------
    GET /api/application/profile
    Step-1: Fetch read-only user profile
