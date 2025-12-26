@@ -49,52 +49,38 @@ export const getProfile = asyncHandler(async (req, res) => {
 //   res.json({ success: true, message: "Education saved" });
 // });
 
-export const uploadEducationFile = async (file) => {
-  const token = localStorage.getItem("token");
+export const uploadEducationFile = async (req, res) => {
+  try {
+    const { fileName, fileType, folder } = req.body;
 
-  if (!token) {
-    throw new Error("User not authenticated");
-  }
-
-  // 1️⃣ Request presigned URL
-  const res = await fetch(
-    "https://d1xgi380kxuazw.cloudfront.net/api/upload/presigned-url",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        fileName: file.name,
-        fileType: file.type,
-        folder: "education",
-      }),
+    if (!fileName || !fileType || !folder) {
+      return res.status(400).json({ message: "Invalid upload request" });
     }
-  );
 
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error("Presign failed: " + err);
+    // User already authenticated via middleware
+    // req.user is available here
+    const userId = req.user.id;
+
+    const key = `${folder}/${userId}-${Date.now()}-${fileName}`;
+
+    const command = new PutObjectCommand({
+      Bucket: process.env.AWS_BUCKET,
+      Key: key,
+      ContentType: fileType,
+    });
+
+    const uploadUrl = await getSignedUrl(s3, command, { expiresIn: 300 });
+
+    return res.json({
+      uploadUrl,
+      fileUrl: `https://${process.env.AWS_BUCKET}.s3.amazonaws.com/${key}`,
+    });
+  } catch (error) {
+    console.error("UPLOAD ERROR:", error);
+    res.status(500).json({ message: "Upload failed" });
   }
-
-  const { uploadUrl, fileUrl } = await res.json();
-
-  // 2️⃣ Upload to S3
-  const upload = await fetch(uploadUrl, {
-    method: "PUT",
-    headers: {
-      "Content-Type": file.type,
-    },
-    body: file,
-  });
-
-  if (!upload.ok) {
-    throw new Error("S3 upload failed");
-  }
-
-  return fileUrl;
 };
+
 
 
 
