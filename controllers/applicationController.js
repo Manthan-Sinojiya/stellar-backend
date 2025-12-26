@@ -49,7 +49,7 @@ export const getProfile = asyncHandler(async (req, res) => {
 //   res.json({ success: true, message: "Education saved" });
 // });
 
-export const saveEducation = asyncHandler(async (req, res) => {
+export const uploadEducationFile = asyncHandler(async (req, res) => {
   const { level, percentage, cgpa, marksheetUrl } = req.body;
 
   if (!marksheetUrl) {

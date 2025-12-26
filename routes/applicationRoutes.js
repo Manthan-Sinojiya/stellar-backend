@@ -5,7 +5,7 @@ import { uploadCertification } from "../middleware/uploadMiddleware.js";
 import {
   getProfile,
   getProgress,
-  saveEducation,
+  uploadEducationFile,
   getEducation,
   addCertification,
   scheduleInterview,
@@ -33,7 +33,7 @@ router.get("/progress", protect, getProgress);
 router.post(
   "/education",
   protect,
-  saveEducation
+  uploadEducationFile
 );
 router.get("/education", protect, getEducation);
 
