@@ -102,18 +102,43 @@ export const completeAptitudeStep = asyncHandler(async (req, res) => {
 //   res.json({ success: true, message: "Certification added" });
 // });
 
-export const addCertification = async (req, res) => {
-  if (!req.file) return res.status(400).json({ message: "Certificate required" });
+/* controllers/applicationController.js */
 
+/* controllers/applicationController.js */
+
+export const addCertification = asyncHandler(async (req, res) => {
+  const { title, organisation, certificateType, issueDate, certificateUrl } = req.body;
+
+  // 1. Validation
+  if (!title || !certificateUrl) {
+    res.status(400);
+    throw new Error("Title and Certificate File are required");
+  }
+
+  // 2. Create the record in MongoDB
   const cert = await Certification.create({
-    user: req.user._id,
-    title: req.body.title,
-    organisation: req.body.organisation,
-    certificateUrl: `/uploads/certifications/${req.file.filename}`,
+    userId: req.user.id, // Ensure userId is passed from the protect middleware
+    title,
+    organisation,
+    certificateType,
+    issueDate,
+    certificateUrl,
   });
 
-  res.status(201).json(cert);
-};
+  // 3. IMPORTANT: Update progress so the system knows this step is finished
+  await ApplicationProgress.findOneAndUpdate(
+    { userId: req.user.id },
+    { step4Completed: true },
+    { upsert: true }
+  );
+
+  res.status(201).json({ success: true, cert });
+});
+
+export const getCertifications = asyncHandler(async (req, res) => {
+  const certifications = await Certification.find({ userId: req.user.id });
+  res.json({ success: true, certifications });
+});
 
 /* ------------------------------------------------------------------
    POST /api/application/interview
