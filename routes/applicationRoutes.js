@@ -31,8 +31,8 @@ router.get("/progress", protect, getProgress);
 
 // STEP 2 – education
 router.post("/upload", protect, uploadEducationFile);
-router.post("/save", protect, saveEducation);
-router.get("/complete", protect, getEducation);
+router.post("/education", protect, saveEducation);
+router.get("/education", protect, getEducation);
 
 // STEP 3 – Aptitude (NEW)
 router.post("/aptitude/complete", protect, completeAptitudeStep);
