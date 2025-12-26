@@ -30,11 +30,8 @@ router.put("/profile", protect, updateProfile);
 router.get("/progress", protect, getProgress);
 
 // STEP 2 – education
-router.post(
-  "/education",
-  protect,
-  uploadEducationFile
-);
+router.post("/education", protect, saveEducation);
+
 router.get("/education", protect, getEducation);
 
 // STEP 3 – Aptitude (NEW)

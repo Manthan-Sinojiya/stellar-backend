@@ -81,6 +81,23 @@ export const uploadEducationFile = async (req, res) => {
   }
 };
 
+export const saveEducation = async (req, res) => {
+  const { level, percentage, cgpa, marksheetUrl } = req.body;
+
+  if (!marksheetUrl) {
+    return res.status(400).json({ message: "Marksheet URL missing" });
+  }
+
+  await Education.create({
+    userId: req.user.id,
+    level,
+    percentage,
+    cgpa,
+    marksheetUrl,
+  });
+
+  res.json({ success: true });
+};
 
 
 
