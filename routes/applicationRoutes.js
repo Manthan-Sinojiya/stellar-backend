@@ -41,8 +41,13 @@ router.get("/education", protect, getEducation);
 router.post("/aptitude/complete", protect, completeAptitudeStep);
 
 // STEP 4 – certification
-router.post("/certification", protect, addCertification);
-
+// router.post("/certification", protect, addCertification);
+router.post(
+  "/certification",
+  protect,
+  uploadCertification.single("certificate"),
+  addCertification
+);
 // STEP 5 – interview
 router.post("/interview", protect, scheduleInterview);
 

@@ -114,19 +114,32 @@ export const completeAptitudeStep = asyncHandler(async (req, res) => {
    POST /api/application/certification
    Step-4: Add certification
 ------------------------------------------------------------------ */
-export const addCertification = asyncHandler(async (req, res) => {
-  await Certification.create({
-    ...req.body,
-    userId: req.user.id,
+// export const addCertification = asyncHandler(async (req, res) => {
+//   await Certification.create({
+//     ...req.body,
+//     userId: req.user.id,
+//   });
+
+//   await ApplicationProgress.findOneAndUpdate(
+//     { userId: req.user.id },
+//     { step4Completed: true }
+//   );
+
+//   res.json({ success: true, message: "Certification added" });
+// });
+
+export const addCertification = async (req, res) => {
+  if (!req.file) return res.status(400).json({ message: "Certificate required" });
+
+  const cert = await Certification.create({
+    user: req.user._id,
+    title: req.body.title,
+    organisation: req.body.organisation,
+    certificateUrl: `/uploads/certifications/${req.file.filename}`,
   });
 
-  await ApplicationProgress.findOneAndUpdate(
-    { userId: req.user.id },
-    { step4Completed: true }
-  );
-
-  res.json({ success: true, message: "Certification added" });
-});
+  res.status(201).json(cert);
+};
 
 /* ------------------------------------------------------------------
    POST /api/application/interview
