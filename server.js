@@ -87,7 +87,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/demo-call", demoCallRoutes);
 app.use("/api/applications", applicationRoutes);
 app.use("/api/settings", settingsRoutes);
-app.use("/uploads", express.static("uploads"));
+app.use("/api/upload", uploadRoutes);
 
 /* ------------------------------------------------------------------
    GLOBAL ERROR HANDLER
