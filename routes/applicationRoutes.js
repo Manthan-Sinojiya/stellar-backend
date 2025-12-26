@@ -4,6 +4,9 @@ import { uploadCertification } from "../middleware/uploadMiddleware.js";
 import {
   getProfile,
   getProgress,
+  uploadEducationFile,
+  saveEducation,
+  getEducation,
   addCertification,
   scheduleInterview,
   completeProfileStep,
@@ -25,6 +28,11 @@ router.put("/profile", protect, updateProfile);
 
 // STEP PROGRESS
 router.get("/progress", protect, getProgress);
+
+// STEP 2 – education
+router.post("/upload", protect, uploadEducationFile);
+router.post("/", protect, saveEducation);
+router.get("/", protect, getEducation);
 
 // STEP 3 – Aptitude (NEW)
 router.post("/aptitude/complete", protect, completeAptitudeStep);
