@@ -44,6 +44,9 @@ const QuizSchema = new mongoose.Schema(
       required: true,
     },
 
+    // ADD THIS: duration in minutes (0 or null can mean no limit)
+    duration: { type: Number, default: 0 },
+    
     // Controls visibility to students
     isPublished: { type: Boolean, default: false },
 

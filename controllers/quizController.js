@@ -25,8 +25,7 @@ import asyncHandler from "express-async-handler";
    - Throws Error on invalid structure
 ------------------------------------------------------------------ */
 const validateQuestion = (q) => {
-  if (!q || typeof q !== "object")
-    throw new Error("Invalid question object");
+  if (!q || typeof q !== "object") throw new Error("Invalid question object");
 
   if (!q.question || !q.question.toString().trim())
     throw new Error("Question text is required");
@@ -147,7 +146,7 @@ export const getQuiz = asyncHandler(async (req, res) => {
    - Validates each question before saving
 ------------------------------------------------------------------ */
 export const createQuiz = asyncHandler(async (req, res) => {
-  const { title, category, questions } = req.body;
+  const { title, category, questions, duration } = req.body;
 
   if (!title || !category || !questions?.length) {
     res.status(400);
@@ -157,7 +156,12 @@ export const createQuiz = asyncHandler(async (req, res) => {
   // Validate each question
   questions.forEach(validateQuestion);
 
-  const quiz = await Quiz.create({ title, category, questions });
+  const quiz = await Quiz.create({
+    title,
+    category,
+    questions,
+    duration: duration || 0,
+  });
 
   res.status(201).json({
     success: true,
@@ -178,11 +182,11 @@ export const updateQuiz = asyncHandler(async (req, res) => {
     throw new Error("Quiz not found");
   }
 
-  const { title, category, questions } = req.body;
+  const { title, category, questions, duration } = req.body;
 
   if (title) quiz.title = title;
   if (category) quiz.category = category;
-
+  if (duration !== undefined) quiz.duration = duration; // Update duration
   if (Array.isArray(questions)) {
     questions.forEach(validateQuestion);
     quiz.questions = questions;

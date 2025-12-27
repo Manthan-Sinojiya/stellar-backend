@@ -109,15 +109,35 @@ export const createUser = asyncHandler(async (req, res) => {
 /* ------------------------------------------------------------------
    PUT /api/users/:id
    - Update user profile data
-   - Admin-only functionality (based on route protection)
+  - Admin-only functionality (based on route protection)
 ------------------------------------------------------------------ */
 export const updateUser = asyncHandler(async (req, res) => {
-  const { fullName, email, role } = req.body;
+  const { 
+    fullName, 
+    email, 
+    role, 
+    fatherName, 
+    mobile, 
+    address1, 
+    city, 
+    state, 
+    pincode 
+  } = req.body;
 
   const user = await User.findByIdAndUpdate(
     req.params.id,
-    { fullName, email, role },
-    { new: true } // Return updated document
+    { 
+      fullName, 
+      email, 
+      role, 
+      fatherName, 
+      mobile, 
+      address1, 
+      city, 
+      state, 
+      pincode 
+    }, 
+    { new: true, runValidators: true } // Return updated document and validate
   );
 
   res.json({
