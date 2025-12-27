@@ -16,6 +16,10 @@
  */
 
 import User from "../models/User.js";
+import Education from "../models/Education.js";
+import Certification from "../models/Certification.js";
+import QuizResult from "../models/QuizResult.js";
+import ApplicationProgress from "../models/ApplicationProgress.js";
 import bcrypt from "bcryptjs";
 import asyncHandler from "express-async-handler";
 
@@ -26,13 +30,48 @@ import asyncHandler from "express-async-handler";
    - Typically used in admin dashboard
 ------------------------------------------------------------------ */
 export const getUsers = asyncHandler(async (req, res) => {
-  const users = await User.find().sort({ createdAt: -1 });
+    const users = await User.aggregate([
+    { $sort: { createdAt: -1 } },
+    {
+      $lookup: {
+        from: "educations",
+        localField: "_id",
+        foreignField: "userId",
+        as: "education"
+      }
+    },
+    {
+      $lookup: {
+        from: "quizresults",
+        localField: "_id",
+        foreignField: "userId",
+        as: "quizResults"
+      }
+    },
+    {
+      $lookup: {
+        from: "certifications",
+        localField: "_id",
+        foreignField: "userId",
+        as: "certifications"
+      }
+    },
+    {
+      $lookup: {
+        from: "applicationprogresses",
+        localField: "_id",
+        foreignField: "userId",
+        as: "progress"
+      }
+    }
+  ]);
 
   res.json({
     success: true,
     users,
   });
 });
+
 
 /* ------------------------------------------------------------------
    POST /api/users

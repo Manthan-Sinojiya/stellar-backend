@@ -135,6 +135,7 @@ export const addCertification = asyncHandler(async (req, res) => {
   res.status(201).json({ success: true, cert });
 });
 
+// Fetch all saved certifications for the current user
 export const getCertifications = asyncHandler(async (req, res) => {
   const certifications = await Certification.find({ userId: req.user.id });
   res.json({ success: true, certifications });
