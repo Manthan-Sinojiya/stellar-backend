@@ -30,14 +30,15 @@ import asyncHandler from "express-async-handler";
    - Typically used in admin dashboard
 ------------------------------------------------------------------ */
 export const getUsers = asyncHandler(async (req, res) => {
-    const users = await User.aggregate([
+    // Use aggregation to join multiple collections
+  const users = await User.aggregate([
     { $sort: { createdAt: -1 } },
     {
       $lookup: {
-        from: "educations",
+        from: "educations", // ensure this matches the collection name in MongoDB (usually lowercase plural)
         localField: "_id",
         foreignField: "userId",
-        as: "education"
+        as: "educationData"
       }
     },
     {
