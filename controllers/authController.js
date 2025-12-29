@@ -32,6 +32,9 @@ export const registerUser = asyncHandler(async (req, res) => {
     fullName,
     fatherName,
     email,
+    passingYear,
+    stream,
+    source,
     mobile,
     password,
     pincode,
@@ -60,6 +63,9 @@ export const registerUser = asyncHandler(async (req, res) => {
     fullName,
     fatherName,
     email,
+    passingYear,
+    stream,
+    source,
     mobile,
     password: hashedPassword,
     pincode,
@@ -194,9 +200,9 @@ export const googleAuth = asyncHandler(async (req, res) => {
    PUT /api/auth/complete-profile
 ------------------------------------------------------------------ */
 export const completeProfile = asyncHandler(async (req, res) => {
-  let { fatherName, mobile, address1, city, state, pincode } = req.body;
+  let { fatherName, mobile, passingYear, stream, source, address1, city, state, pincode } = req.body;
 
-  if (!fatherName || !mobile || !address1 || !city || !state || !pincode) {
+  if (!fatherName || !mobile || !passingYear || !stream || !source || !address1 || !city || !state || !pincode) {
     res.status(400);
     throw new Error("All profile fields are required");
   }
@@ -217,6 +223,9 @@ export const completeProfile = asyncHandler(async (req, res) => {
 
   user.fatherName = fatherName;
   user.mobile = mobile;
+  user.passingYear = passingYear;
+  user.stream = stream;
+  user.source = source;
   user.address1 = address1;
   user.city = city;
   user.state = state;

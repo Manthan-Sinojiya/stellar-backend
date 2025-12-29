@@ -45,6 +45,10 @@ const userSchema = new mongoose.Schema(
     pincode: String,
     image: String,
 
+    passingYear: String,
+    stream: String,
+    source: String,
+    
     // OTP verification flag
     isVerified: { type: Boolean, default: false },
 
