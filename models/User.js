@@ -21,6 +21,13 @@ const userSchema = new mongoose.Schema(
   {
     fullName: { type: String },
     fatherName: { type: String },
+    fatherMobile: { type: String },
+    fatherHighestEducation: { type: String },
+    fatherOccupation: { type: String },
+    motherName: { type: String },
+    motherEducation: { type: String },
+    motherOccupation: { type: String },
+    extracurriculars: { type: String },
 
     // Unique identifiers
     email: { type: String, unique: true },

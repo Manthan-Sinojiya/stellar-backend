@@ -275,13 +275,45 @@ export const getProgress = asyncHandler(async (req, res) => {
 });
 
 export const completeProfileStep = asyncHandler(async (req, res) => {
+  const { 
+    fatherMobile, 
+    fatherHighestEducation, 
+    fatherOccupation, 
+    motherName, 
+    motherEducation, 
+    motherOccupation,
+    extracurriculars 
+  } = req.body;
+
+  // 1. Mandatory Validation for Parent Details
+  if (!fatherMobile || !fatherHighestEducation || !fatherOccupation || 
+      !motherName || !motherEducation || !motherOccupation) {
+    res.status(400);
+    throw new Error("All parent details (including Father's Mobile) are compulsory.");
+  }
+
+  // 2. Update User Profile with the new parent/extra data
+  await User.findByIdAndUpdate(req.user.id, {
+    fatherMobile,
+    fatherHighestEducation,
+    fatherOccupation,
+    motherName,
+    motherEducation,
+    motherOccupation,
+    extracurriculars 
+  });
+
+  // 3. Mark Step 1 as completed
   await ApplicationProgress.findOneAndUpdate(
     { userId: req.user.id },
     { step1Completed: true },
     { upsert: true }
   );
 
-  res.json({ success: true });
+  res.json({ 
+    success: true, 
+    message: "Profile and parent details validated successfully" 
+  });
 });
 
 /* ------------------------------------------------------------------
