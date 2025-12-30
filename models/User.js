@@ -24,6 +24,7 @@ const userSchema = new mongoose.Schema(
     fatherMobile: { type: String },
     fatherHighestEducation: { type: String },
     fatherOccupation: { type: String },
+    fatherIncome: { type: String },
     motherName: { type: String },
     motherEducation: { type: String },
     motherOccupation: { type: String },
