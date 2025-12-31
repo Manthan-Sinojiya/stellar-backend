@@ -287,12 +287,25 @@ export const completeProfileStep = asyncHandler(async (req, res) => {
     extracurriculars,
   } = req.body;
 
+  const clean = (val) =>
+    val === undefined || val === null || String(val).trim() === "" ? null : val;
+
+  const fatherIncomeClean = clean(fatherIncome);
+
   // 1. Mandatory Validation for Parent Details
-  if (!fatherMobile || !fatherHighestEducation || !fatherOccupation || 
-      (fatherIncome === undefined || fatherIncome === null || fatherIncome === "") ||
-      !motherName || !motherEducation || !motherOccupation) {
+  if (
+    !fatherMobile ||
+    !fatherHighestEducation ||
+    !fatherOccupation ||
+    !fatherIncomeClean ||
+    !motherName ||
+    !motherEducation ||
+    !motherOccupation
+  ) {
     res.status(400);
-    throw new Error("All parent details (including Father's Mobile) are compulsory.");
+    throw new Error(
+      "All parent details (including Father's Mobile) are compulsory."
+    );
   }
 
   // 2. Update User Profile with the new parent/extra data
@@ -304,7 +317,7 @@ export const completeProfileStep = asyncHandler(async (req, res) => {
     motherName,
     motherEducation,
     motherOccupation,
-    extracurriculars 
+    extracurriculars,
   });
 
   // 3. Mark Step 1 as completed
