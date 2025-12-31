@@ -448,7 +448,7 @@ export const generateApplicationPDF = (data) => {
       if (fs.existsSync(logoPath)) {
         // Optional: Adds a subtle white glow/background if the logo is dark
         // doc.circle(65, 45, 30).fill('#ffffff'); 
-        doc.image(logoPath, 5, 5, { width: 70 });
+        doc.image(logoPath, 5, 0, { width: 70 });
       }
 
       // 3. OFFICIAL TITLE (Positioned to avoid overlap with logo)
