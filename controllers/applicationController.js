@@ -154,78 +154,107 @@ export const getCertifications = asyncHandler(async (req, res) => {
 //     throw new Error("Interview date required");
 //   }
 
+//   // 1. Update Progress
 //   await ApplicationProgress.findOneAndUpdate(
 //     { userId: req.user.id },
-//     {
-//       interviewDate,
-//       step5Completed: true,
-//     }
+//     { step5Completed: true, interviewDate },
+//     { upsert: true }
 //   );
 
-//   res.json({
-//     success: true,
-//     message: "Interview scheduled successfully",
+//   // 2. Update or Create Application Record
+//   let application = await Application.findOne({ userId: req.user.id });
+//   if (!application) {
+//     application = await Application.create({
+//       userId: req.user.id,
+//       interviewDate,
+//     });
+//   } else {
+//     application.interviewDate = interviewDate;
+//     await application.save();
+//   }
+
+//   // 3. Generate PDF Buffer
+//   const user = await User.findById(req.user.id);
+//   const pdfBuffer = await generateApplicationPDF({
+//     ...user.toObject(),
+//     interviewDate,
+//     quizSummary: "Completed",
+//   });
+
+//   // 4. Stream Buffer to GridFS
+//   const bucket = req.app.locals.gridFSBucket;
+//   const uploadStream = bucket.openUploadStream(
+//     `application_${application._id}.pdf`,
+//     { contentType: "application/pdf" }
+//   );
+
+//   uploadStream.end(pdfBuffer);
+
+//   uploadStream.on("finish", async () => {
+//     // 5. Link the GridFS File ID to the Application model
+//     application.pdfFileId = uploadStream.id;
+//     await application.save();
+
+//     res.json({
+//       success: true,
+//       applicationId: application._id,
+//     });
+//   });
+
+//   uploadStream.on("error", (err) => {
+//     res.status(500);
+//     throw new Error("PDF Storage Failed: " + err.message);
 //   });
 // });
 
 export const scheduleInterview = asyncHandler(async (req, res) => {
   const { interviewDate } = req.body;
+  const userId = req.user.id;
 
-  if (!interviewDate) {
-    res.status(400);
-    throw new Error("Interview date required");
-  }
+  // 1. Fetch all data for the PDF
+  const user = await User.findById(userId).lean();
+  const educations = await Education.find({ userId }).lean();
+  const certifications = await Certification.find({ userId }).lean();
 
-  // 1. Update Progress
-  await ApplicationProgress.findOneAndUpdate(
-    { userId: req.user.id },
-    { step5Completed: true, interviewDate },
-    { upsert: true }
-  );
-
-  // 2. Update or Create Application Record
-  let application = await Application.findOne({ userId: req.user.id });
-  if (!application) {
-    application = await Application.create({
-      userId: req.user.id,
-      interviewDate,
-    });
-  } else {
-    application.interviewDate = interviewDate;
-    await application.save();
-  }
-
-  // 3. Generate PDF Buffer
-  const user = await User.findById(req.user.id);
-  const pdfBuffer = await generateApplicationPDF({
-    ...user.toObject(),
+  const fullData = {
+    ...user,
     interviewDate,
-    quizSummary: "Completed",
-  });
+    educations,
+    certifications
+  };
 
-  // 4. Stream Buffer to GridFS
+  // 2. Generate Buffer
+  const pdfBuffer = await generateApplicationPDF(fullData);
+
+  // 3. GridFS Storage
   const bucket = req.app.locals.gridFSBucket;
-  const uploadStream = bucket.openUploadStream(
-    `application_${application._id}.pdf`,
-    { contentType: "application/pdf" }
-  );
+  
+  // Cleanup old PDF if exists
+  let application = await Application.findOne({ userId });
+  if (application?.pdfFileId) {
+    try { await bucket.delete(application.pdfFileId); } catch (e) {}
+  }
+
+  const uploadStream = bucket.openUploadStream(`app_${userId}.pdf`, {
+    contentType: 'application/pdf',
+  });
 
   uploadStream.end(pdfBuffer);
 
+  // Ensure database update happens AFTER stream finish
   uploadStream.on("finish", async () => {
-    // 5. Link the GridFS File ID to the Application model
-    application.pdfFileId = uploadStream.id;
-    await application.save();
+    if (!application) {
+      application = await Application.create({ userId, interviewDate, pdfFileId: uploadStream.id });
+    } else {
+      application.interviewDate = interviewDate;
+      application.pdfFileId = uploadStream.id;
+      await application.save();
+    }
 
-    res.json({
-      success: true,
-      applicationId: application._id,
-    });
-  });
+    // Mark step 5 complete
+    await ApplicationProgress.findOneAndUpdate({ userId }, { step5Completed: true }, { upsert: true });
 
-  uploadStream.on("error", (err) => {
-    res.status(500);
-    throw new Error("PDF Storage Failed: " + err.message);
+    res.json({ success: true, applicationId: application._id });
   });
 });
 
@@ -252,10 +281,6 @@ export const getApplicationPDF = asyncHandler(async (req, res) => {
 
   stream.pipe(res);
 });
-
-/* ------------------------------------------------
-   GET APPLICATION PDF
-------------------------------------------------- */
 
 /* ------------------------------------------------------------------
    GET /api/application/progress
