@@ -287,15 +287,19 @@ export const completeProfileStep = asyncHandler(async (req, res) => {
     extracurriculars,
   } = req.body;
 
+  // Normalize values
+  const clean = (v) => typeof v === "string" ? v.trim() : v;
+
   // 1. Mandatory Validation for Parent Details
   if (
-    !fatherMobile ||
-    !fatherHighestEducation ||
-    !fatherOccupation ||
-    (!fatherIncome && fatherIncome !== 0) ||
-    !motherName ||
-    !motherEducation ||
-    !motherOccupation
+     !clean(fatherMobile) ||
+  !clean(fatherHighestEducation) ||
+  !clean(fatherOccupation) ||
+  fatherIncome === undefined ||
+  fatherIncome === null ||
+  !clean(motherName) ||
+  !clean(motherEducation) ||
+  !clean(motherOccupation)
   ) {
     res.status(400);
     throw new Error(
