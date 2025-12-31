@@ -1,5 +1,4 @@
 import PDFDocument from "pdfkit";
-import path from "path";
 
 export const generateApplicationPDF = (data) => {
   return new Promise((resolve, reject) => {
@@ -10,77 +9,100 @@ export const generateApplicationPDF = (data) => {
     doc.on("error", reject);
 
     const COLORS = {
-      primary: "#0f172a",
-      accent: "#ab45ff",
+      primary: "#0f172a", // Deep Navy
+      accent: "#ab45ff",  // Stellar Purple
       textDark: "#1e293b",
       textLight: "#64748b",
-      border: "#e2e8f0",
-      bgLight: "#f8fafc"
+      divider: "#e2e8f0",
+      bgSection: "#f8fafc"
     };
 
-    // --- Header ---
-    doc.rect(0, 0, 612, 110).fill(COLORS.primary);
-    doc.fillColor("#ffffff").font("Helvetica-Bold").fontSize(24).text("APPLICATION RECORD", 50, 40);
-    doc.fontSize(9).fillColor("#94a3b8").text(`ID: ${data._id || 'N/A'} | Generated: ${new Date().toLocaleDateString()}`, 50, 70);
+    // ================= HEADER =================
+    doc.rect(0, 0, 612, 120).fill(COLORS.primary);
+    doc.fillColor("#ffffff").font("Helvetica-Bold").fontSize(26).text("OFFICIAL APPLICATION", 50, 40, { characterSpacing: 1 });
+    doc.fontSize(10).fillColor(COLORS.accent).text("STELLAR INSTITUTE OF TECHNOLOGY", 50, 70, { characterSpacing: 2 });
+    
+    // Top Right Info
+    doc.fillColor("#94a3b8").fontSize(8)
+       .text(`RECORD ID: ${data._id || "PENDING"}`, 400, 45, { align: "right" })
+       .text(`GENERATED: ${new Date().toLocaleString()}`, 400, 58, { align: "right" });
 
-    let y = 140;
+    let y = 150;
 
-    const drawSectionHeader = (title) => {
+    // Helper: Draw Section Header
+    const drawSection = (title) => {
       if (y > 700) { doc.addPage(); y = 50; }
-      doc.fillColor(COLORS.accent).font("Helvetica-Bold").fontSize(11).text(title.toUpperCase(), 50, y);
+      doc.fillColor(COLORS.accent).font("Helvetica-Bold").fontSize(12).text(title.toUpperCase(), 50, y);
       y += 15;
-      doc.moveTo(50, y).lineTo(545, y).strokeColor(COLORS.border).stroke();
+      doc.moveTo(50, y).lineTo(545, y).strokeColor(COLORS.divider).lineWidth(1).stroke();
       y += 15;
     };
 
-    const drawField = (label, value) => {
+    // Helper: Two-Column Data Row
+    const drawRow = (label1, val1, label2, val2) => {
       if (y > 750) { doc.addPage(); y = 50; }
-      doc.fillColor(COLORS.textLight).font("Helvetica-Bold").fontSize(8).text(label.toUpperCase(), 50, y, { width: 140 });
-      doc.fillColor(COLORS.textDark).font("Helvetica").fontSize(10).text(value || "Not Provided", 200, y, { width: 345 });
-      y += 22;
+      // Column 1
+      doc.fillColor(COLORS.textLight).font("Helvetica-Bold").fontSize(8).text(label1.toUpperCase(), 50, y);
+      doc.fillColor(COLORS.textDark).font("Helvetica").fontSize(10).text(val1 || "N/A", 50, y + 12, { width: 230 });
+      // Column 2
+      if (label2) {
+        doc.fillColor(COLORS.textLight).font("Helvetica-Bold").fontSize(8).text(label2.toUpperCase(), 300, y);
+        doc.fillColor(COLORS.textDark).font("Helvetica").fontSize(10).text(val2 || "N/A", 300, y + 12, { width: 230 });
+      }
+      y += 40;
     };
 
-    // --- 1. Personal & Parental ---
-    drawSectionHeader("Personal & Parental Background");
-    drawField("Full Name", data.fullName);
-    drawField("Father's Name", data.fatherName);
-    drawField("Father's Occupation", `${data.fatherOccupation} (${data.fatherHighestEducation})`);
-    drawField("Mother's Name", data.motherName);
-    drawField("Annual Family Income", data.fatherIncome);
+    // ================= 1. PERSONAL DETAILS =================
+    drawSection("Applicant Identity");
+    drawRow("Full Name", data.fullName, "Email Address", data.email);
+    drawRow("Mobile Number", data.mobile || data.phone || "N/A", "City", data.city);
 
-    // --- 2. Education ---
-    y += 10;
-    drawSectionHeader("Academic Qualifications");
+    // ================= 2. PARENTAL BACKGROUND =================
+    drawSection("Parental & Financial Background");
+    drawRow("Father's Name", data.fatherName, "Father's Occupation", data.fatherOccupation);
+    drawRow("Father's Education", data.fatherHighestEducation, "Annual Family Income", data.fatherIncome);
+    drawRow("Mother's Name", data.motherName, "Mother's Occupation", data.motherOccupation);
+    drawRow("Mother's Education", data.motherEducation);
+
+    // ================= 3. ACADEMIC & PROGRESS =================
+    drawSection("Academic Performance");
     if (data.educations && data.educations.length > 0) {
       data.educations.forEach(edu => {
-        drawField(edu.level, `Score: ${edu.percentage || edu.cgpa} | Document Verified`);
+        drawRow(`${edu.level} Status`, "Verified Record", `${edu.level} Score`, `${edu.percentage || edu.cgpa}`);
       });
     }
 
-    // --- 3. Extra-Curriculars ---
-    y += 10;
-    drawSectionHeader("Extra-Curricular Activities");
-    doc.fillColor(COLORS.textDark).font("Helvetica").fontSize(10).text(data.extracurriculars || "None listed", 50, y, { width: 495 });
-    y += 30;
+    // ================= 4. APTITUDE & INTERVIEW =================
+    drawSection("Evaluation Summary");
+    drawRow("Aptitude Test", data.quizSummary || "COMPLETED", "Interview Schedule", data.interviewDate);
 
-    // --- 4. Certifications ---
+    // ================= 5. ACTIVITIES & CERTS =================
+    drawSection("Extra-Curriculars & Certifications");
+    doc.fillColor(COLORS.textDark).font("Helvetica").fontSize(10).text(data.extracurriculars || "No extra-curricular activities listed.", 50, y, { width: 500 });
+    y += 40;
+
     if (data.certifications && data.certifications.length > 0) {
-      drawSectionHeader("Certifications");
       data.certifications.forEach(cert => {
-        drawField(cert.title, `${cert.organisation} (${cert.certificateType})`);
+        doc.rect(50, y - 5, 500, 25).fill(COLORS.bgSection);
+        doc.fillColor(COLORS.textDark).font("Helvetica-Bold").fontSize(9).text(`• ${cert.title}`, 60, y);
+        doc.fillColor(COLORS.textLight).font("Helvetica").text(cert.organisation, 300, y);
+        y += 30;
       });
     }
 
-    // --- Status Badge ---
-    y += 20;
-    doc.roundedRect(50, y, 180, 30, 5).fill(COLORS.accent);
-    doc.fillColor("#ffffff").font("Helvetica-Bold").fontSize(10).text("STATUS: SUBMITTED", 75, y + 10);
-
-    // --- Page Numbers ---
+    // ================= FOOTER & STATUS =================
     const pages = doc.bufferedPageRange();
     for (let i = 0; i < pages.count; i++) {
       doc.switchToPage(i);
-      doc.fontSize(8).fillColor(COLORS.textLight).text(`Page ${i + 1} of ${pages.count} • Stellar Identity System`, 0, 800, { align: "center", width: 612 });
+      
+      // Status Badge on every page
+      doc.roundedRect(400, 780, 160, 30, 5).fill(COLORS.accent);
+      doc.fillColor("#ffffff").font("Helvetica-Bold").fontSize(10).text("STATUS: SUBMITTED", 425, 792);
+
+      doc.fontSize(8).fillColor(COLORS.textLight).text(
+        `Page ${i + 1} of ${pages.count} | Secure Digital Record | © 2025 Stellar`,
+        50, 800
+      );
     }
 
     doc.end();
