@@ -54,7 +54,7 @@ export const saveEducation = async (req, res) => {
     { step2Completed: true },
     { upsert: true }
   );
-  
+
   res.json({ success: true, record });
 };
 
@@ -107,7 +107,8 @@ export const completeAptitudeStep = asyncHandler(async (req, res) => {
 /* controllers/applicationController.js */
 
 export const addCertification = asyncHandler(async (req, res) => {
-  const { title, organisation, certificateType, issueDate, certificateUrl } = req.body;
+  const { title, organisation, certificateType, issueDate, certificateUrl } =
+    req.body;
 
   // 1. Validation
   if (!title || !certificateUrl) {
@@ -206,7 +207,7 @@ export const scheduleInterview = asyncHandler(async (req, res) => {
   const bucket = req.app.locals.gridFSBucket;
   const uploadStream = bucket.openUploadStream(
     `application_${application._id}.pdf`,
-    { contentType: 'application/pdf' }
+    { contentType: "application/pdf" }
   );
 
   uploadStream.end(pdfBuffer);
@@ -252,7 +253,6 @@ export const getApplicationPDF = asyncHandler(async (req, res) => {
   stream.pipe(res);
 });
 
-
 /* ------------------------------------------------
    GET APPLICATION PDF
 ------------------------------------------------- */
@@ -262,35 +262,45 @@ export const getApplicationPDF = asyncHandler(async (req, res) => {
    Fetch step completion status
 ------------------------------------------------------------------ */
 export const getProgress = asyncHandler(async (req, res) => {
-  const progress =
-    (await ApplicationProgress.findOne({ userId: req.user.id })) || {
-      step1Completed: false,
-      step2Completed: false,
-      step3Completed: false,
-      step4Completed: false,
-      step5Completed: false,
-    };
+  const progress = (await ApplicationProgress.findOne({
+    userId: req.user.id,
+  })) || {
+    step1Completed: false,
+    step2Completed: false,
+    step3Completed: false,
+    step4Completed: false,
+    step5Completed: false,
+  };
 
   res.json({ success: true, progress });
 });
 
 export const completeProfileStep = asyncHandler(async (req, res) => {
-  const { 
-    fatherMobile, 
-    fatherHighestEducation, 
-    fatherOccupation, 
+  const {
+    fatherMobile,
+    fatherHighestEducation,
+    fatherOccupation,
     fatherIncome,
-    motherName, 
-    motherEducation, 
+    motherName,
+    motherEducation,
     motherOccupation,
-    extracurriculars 
+    extracurriculars,
   } = req.body;
 
   // 1. Mandatory Validation for Parent Details
-  if (!fatherMobile || !fatherHighestEducation || !fatherOccupation || (!fatherIncome && fatherIncome !== 0) ||
-      !motherName || !motherEducation || !motherOccupation) {
+  if (
+    !fatherMobile ||
+    !fatherHighestEducation ||
+    !fatherOccupation ||
+    (!fatherIncome && fatherIncome !== 0) ||
+    !motherName ||
+    !motherEducation ||
+    !motherOccupation
+  ) {
     res.status(400);
-    throw new Error("All parent details (including Father's Mobile) are compulsory.");
+    throw new Error(
+      "All parent details (including Father's Mobile) are compulsory."
+    );
   }
 
   // 2. Update User Profile with the new parent/extra data
@@ -298,11 +308,10 @@ export const completeProfileStep = asyncHandler(async (req, res) => {
     fatherMobile,
     fatherHighestEducation,
     fatherOccupation,
-fatherIncome: fatherIncome.toString(), // Ensure it stores as String to match your Model    motherName,
+    fatherIncome: fatherIncome.toString(), // Ensure it stores as String to match your Model    motherName,
     motherEducation,
     motherOccupation,
-    fatherIncome,
-    extracurriculars 
+    extracurriculars,
   });
 
   // 3. Mark Step 1 as completed
@@ -312,9 +321,9 @@ fatherIncome: fatherIncome.toString(), // Ensure it stores as String to match yo
     { upsert: true }
   );
 
-  res.json({ 
-    success: true, 
-    message: "Profile and parent details validated successfully" 
+  res.json({
+    success: true,
+    message: "Profile and parent details validated successfully",
   });
 });
 
@@ -365,4 +374,3 @@ export const updateProfile = asyncHandler(async (req, res) => {
     message: "Profile updated successfully",
   });
 });
-
