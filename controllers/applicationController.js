@@ -287,7 +287,7 @@ export const completeProfileStep = asyncHandler(async (req, res) => {
   } = req.body;
 
   // 1. Mandatory Validation for Parent Details
-  if (!fatherMobile || !fatherHighestEducation || !fatherOccupation || !fatherIncome ||
+  if (!fatherMobile || !fatherHighestEducation || !fatherOccupation || fatherIncome === undefined || fatherIncome === "" ||
       !motherName || !motherEducation || !motherOccupation) {
     res.status(400);
     throw new Error("All parent details (including Father's Mobile) are compulsory.");
