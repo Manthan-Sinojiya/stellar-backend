@@ -298,6 +298,7 @@ export const completeProfileStep = asyncHandler(async (req, res) => {
     fatherMobile,
     fatherHighestEducation,
     fatherOccupation,
+    fatherIncome,
     motherName,
     motherEducation,
     motherOccupation,
