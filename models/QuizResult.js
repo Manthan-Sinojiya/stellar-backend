@@ -1,53 +1,120 @@
 /**
  * ------------------------------------------------------------------
- * Quiz Result Model
+ * QUIZ RESULT MODEL
  * ------------------------------------------------------------------
  * Responsibilities:
- * - Stores quiz attempt submitted by a student
- * - Keeps detailed comparison of correct answers vs submitted answers
- * - Allows admin review + re-evaluation in future
+ * - Stores a single quiz attempt by a student
+ * - Locks the assigned question set
+ * - Stores detailed per-question evaluation
+ * - Enables admin review, analytics, and re-evaluation
  *
- * answerSchema:
- * - Stores minimal per-question evaluation data
- * - Designed for audit trail and review screens
- *
- * quizResultSchema:
- * - Stores summary score + percentage
- * - userId → reference to User
- * - quizId → reference to Quiz
- *
- * Best Practices:
- * - Use mongoose.models guard for hot-reload safety
- * - answers[] allows detailed reconstruction for result pages
+ * Design Notes:
+ * - One document = one attempt per user per quiz
+ * - answers[] keeps an audit trail
+ * - assignedSetName ensures deterministic evaluation
  * ------------------------------------------------------------------
  */
 
 import mongoose from "mongoose";
 
-// Embedded structure for each question's evaluated answer
-const answerSchema = new mongoose.Schema({
-  questionId: Number,      // index of question in quiz.questions
-  selectedIndex: Number,   // student's choice (for MCQ / checkbox)
-  correctIndex: Number,    // expected choice index
-  // Can be extended later with selectedValue, correctValue, etc.
-});
-
-// Main quiz result schema
-const quizResultSchema = new mongoose.Schema(
+/* ---------------- PER-QUESTION ANSWER SCHEMA ---------------- */
+const AnswerSchema = new mongoose.Schema(
   {
-    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-    quizId: { type: mongoose.Schema.Types.ObjectId, ref: "Quiz", required: true },
+    questionId: {
+      type: Number,
+      required: true, // index in set.questions
+    },
 
-    score: { type: Number, default: 0 },
-    percentage: { type: Number, default: 0 },
-    totalMarks: { type: Number, default: 0 },
-    attempted: { type: Number, default: 0 },
+    question: {
+      type: String,
+      required: true,
+    },
 
-    // Full answer breakdown
-    answers: [answerSchema],
+    type: {
+      type: String,
+      enum: ["mcq", "checkbox", "text"],
+      required: true,
+    },
+
+    /* ---------- MCQ ---------- */
+    correctIndex: Number,
+    userIndex: Number,
+
+    /* ---------- CHECKBOX ---------- */
+    correctAnswers: [String],
+    userAnswers: [String],
+
+    /* ---------- TEXT ---------- */
+    correctText: String,
+    userText: String,
+
+    /* ---------- FINAL ---------- */
+    isCorrect: {
+      type: Boolean,
+      required: true,
+    },
   },
-  { timestamps: true }
+  { _id: false } // prevent extra _id for subdocs
 );
 
+/* ---------------- MAIN QUIZ RESULT SCHEMA ---------------- */
+const QuizResultSchema = new mongoose.Schema(
+  {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      index: true,
+    },
+
+    quizId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Quiz",
+      required: true,
+      index: true,
+    },
+
+    /* 🔒 LOCKED SET */
+    assignedSetName: {
+      type: String,
+      required: true,
+    },
+
+    /* ---------- SCORE SUMMARY ---------- */
+    score: {
+      type: Number,
+      required: true,
+    },
+
+    totalMarks: {
+      type: Number,
+      required: true,
+    },
+
+    attempted: {
+      type: Number,
+      required: true,
+    },
+
+    percentage: {
+      type: Number,
+      required: true,
+    },
+
+    /* ---------- DETAILED ANSWERS ---------- */
+    answers: {
+      type: [AnswerSchema],
+      required: true,
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
+
+/* ---------------- PREVENT MULTIPLE ATTEMPTS ---------------- */
+QuizResultSchema.index({ userId: 1, quizId: 1 }, { unique: true });
+
+/* ---------------- SAFE EXPORT ---------------- */
 export default mongoose.models.QuizResult ||
-  mongoose.model("QuizResult", quizResultSchema);
+  mongoose.model("QuizResult", QuizResultSchema);
