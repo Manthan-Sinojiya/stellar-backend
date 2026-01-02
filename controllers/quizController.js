@@ -407,6 +407,27 @@ export const getQuizzes = asyncHandler(async (req, res) => {
 //   // Admin still sees everything including the full sets array
 //   res.json({ success: true, quiz });
 // });
+
+export const getQuiz = asyncHandler(async (req, res) => {
+  const quiz = await Quiz.findById(req.params.id);
+  if (!quiz) { res.status(404); throw new Error("Quiz not found"); }
+
+  if (req.user?.role !== "admin") {
+    if (!quiz.isPublished) { res.status(403); throw new Error("Quiz not live"); }
+
+    // Randomized Set Allocation
+    const seed = req.user._id.toString() + quiz._id.toString();
+    const hash = seed.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    const assignedSet = quiz.sets[hash % quiz.sets.length];
+
+    const quizObj = quiz.toObject();
+    quizObj.questions = assignedSet.questions; // Flatten for student
+    quizObj.assignedSetName = assignedSet.setName;
+    delete quizObj.sets; // Hide other versions
+    return res.json({ success: true, quiz: quizObj });
+  }
+  res.json({ success: true, quiz });
+});
 /* ------------------------------------------------------------------
    POST /api/quiz
    Creates a new quiz with the nested sets structure.
@@ -445,10 +466,12 @@ export const createQuiz = asyncHandler(async (req, res) => {
 
   if (!title || !category || !sets?.length) {
     res.status(400);
-    throw new Error("Title, Category, and Sets are required");
+    throw new Error("Missing title, category, or sets");
   }
 
+  // Deep Validation
   sets.forEach((set, sIdx) => {
+    if (!set.questions?.length) throw new Error(`Set ${set.setName} is empty`);
     set.questions.forEach((q, qIdx) => validateQuestion(q, sIdx, qIdx));
   });
 
@@ -507,36 +530,6 @@ export const updateQuiz = asyncHandler(async (req, res) => {
 
   const updatedQuiz = await quiz.save();
   res.json({ success: true, quiz: updatedQuiz });
-});
-
-export const getQuiz = asyncHandler(async (req, res) => {
-  const quiz = await Quiz.findById(req.params.id);
-  if (!quiz) {
-    res.status(404);
-    throw new Error("Quiz not found");
-  }
-
-  const isAdmin = req.user?.role === "admin";
-  if (!isAdmin) {
-    if (!quiz.isPublished) {
-      res.status(403);
-      throw new Error("Quiz is not live");
-    }
-
-    // Logic for Randomized Set Assignment for Student
-    if (quiz.sets && quiz.sets.length > 0) {
-      const seed = req.user._id.toString() + quiz._id.toString();
-      const hash = seed.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-      const assignedSet = quiz.sets[hash % quiz.sets.length];
-
-      const quizObj = quiz.toObject();
-      quizObj.questions = assignedSet.questions; // Flatten for UI
-      quizObj.assignedSetName = assignedSet.setName;
-      delete quizObj.sets; // Security: Hide other sets
-      return res.json({ success: true, quiz: quizObj });
-    }
-  }
-  res.json({ success: true, quiz });
 });
 
 /* ------------------------------------------------------------------
