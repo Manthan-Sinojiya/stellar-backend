@@ -287,6 +287,7 @@
 // });
 
 import Quiz from "../models/Quiz.js";
+import QuizResult from "../models/QuizResult.js";
 import asyncHandler from "express-async-handler";
 
 /* ---------------- QUESTION VALIDATION ---------------- */
