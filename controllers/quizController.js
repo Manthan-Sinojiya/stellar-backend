@@ -347,6 +347,28 @@ export const getQuizzes = asyncHandler(async (req, res) => {
 });
 
 /* ---------------- GET SINGLE QUIZ ---------------- */
+// export const getQuiz = asyncHandler(async (req, res) => {
+//   const quiz = await Quiz.findById(req.params.id);
+//   if (!quiz) throw new Error("Quiz not found");
+
+//   const isAdmin = req.user?.role === "admin";
+//   if (!isAdmin && !quiz.isPublished) {
+//     res.status(403);
+//     throw new Error("Quiz not available");
+//   }
+
+//   if (!isAdmin) {
+//     const sets = ["A", "B", "C"];
+//     const hash = [...req.user._id.toString()].reduce((a, c) => a + c.charCodeAt(0), 0);
+//     const assigned = sets[hash % quiz.sets.length];
+
+//     const set = quiz.sets.find(s => s.setName.endsWith(assigned));
+//     return res.json({ success: true, quiz: { ...quiz.toObject(), sets: [set] } });
+//   }
+
+//   res.json({ success: true, quiz });
+// });
+
 export const getQuiz = asyncHandler(async (req, res) => {
   const quiz = await Quiz.findById(req.params.id);
   if (!quiz) throw new Error("Quiz not found");
@@ -358,16 +380,41 @@ export const getQuiz = asyncHandler(async (req, res) => {
   }
 
   if (!isAdmin) {
-    const sets = ["A", "B", "C"];
-    const hash = [...req.user._id.toString()].reduce((a, c) => a + c.charCodeAt(0), 0);
-    const assigned = sets[hash % quiz.sets.length];
+    // 1️⃣ Check if user already attempted
+    let result = await QuizResult.findOne({
+      quizId: quiz._id,
+      userId: req.user._id,
+    });
 
-    const set = quiz.sets.find(s => s.setName.endsWith(assigned));
-    return res.json({ success: true, quiz: { ...quiz.toObject(), sets: [set] } });
+    let assignedSet;
+
+    if (result) {
+      // 2️⃣ Reuse same set
+      assignedSet = quiz.sets.find(
+        (s) => s.setName === result.assignedSetName
+      );
+    } else {
+      // 3️⃣ Randomly assign NEW set
+      assignedSet =
+        quiz.sets[Math.floor(Math.random() * quiz.sets.length)];
+    }
+
+    return res.json({
+      success: true,
+      quiz: {
+        _id: quiz._id,
+        title: quiz.title,
+        category: quiz.category,
+        duration: quiz.duration,
+        assignedSetName: assignedSet.setName,
+        questions: assignedSet.questions,
+      },
+    });
   }
 
   res.json({ success: true, quiz });
 });
+
 
 /* ---------------- UPDATE QUIZ ---------------- */
 export const updateQuiz = asyncHandler(async (req, res) => {
