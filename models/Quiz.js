@@ -30,7 +30,6 @@ const QuestionSchema = new mongoose.Schema({
   type: { type: String, enum: ["mcq", "checkbox", "text"], required: true },
   options: { type: [String], default: [] }, // MCQ / checkbox options
   answer: { type: mongoose.Schema.Types.Mixed, required: true }, // flexible type
-  set: { type: String, enum: ["A", "B", "C", "None"], default: "None" } // NEW FIELD
 });
 
 const SetSchema = new mongoose.Schema({
@@ -55,10 +54,11 @@ const QuizSchema = new mongoose.Schema(
     
     // Controls visibility to students
     isPublished: { type: Boolean, default: false },
-
+    
+    sets: [SetSchema],
     // Array of questions
     questions: [QuestionSchema],
-    sets: [SetSchema],
+    
   },
   { timestamps: true }
 );

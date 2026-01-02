@@ -365,112 +365,178 @@ export const getQuizzes = asyncHandler(async (req, res) => {
 //   res.json({ success: true, quiz });
 // });
 
-export const getQuiz = asyncHandler(async (req, res) => {
-  const quiz = await Quiz.findById(req.params.id);
+// export const getQuiz = asyncHandler(async (req, res) => {
+//   const quiz = await Quiz.findById(req.params.id);
 
-  if (!quiz) {
-    res.status(404);
-    throw new Error("Quiz not found");
-  }
+//   if (!quiz) {
+//     res.status(404);
+//     throw new Error("Quiz not found");
+//   }
 
-  const isAdmin = req.user?.role === "admin";
+//   const isAdmin = req.user?.role === "admin";
 
-  if (!isAdmin) {
-    if (!quiz.isPublished) {
-      res.status(403);
-      throw new Error("Quiz is not available");
-    }
+//   if (!isAdmin) {
+//     if (!quiz.isPublished) {
+//       res.status(403);
+//       throw new Error("Quiz is not available");
+//     }
 
-    // --- RANDOMIZED SET ALLOCATION LOGIC ---
-    if (quiz.sets && quiz.sets.length > 0) {
-      // Create a unique seed using User ID and Quiz ID
-      const seed = req.user._id.toString() + quiz._id.toString();
-      const hash = seed.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+//     // --- RANDOMIZED SET ALLOCATION LOGIC ---
+//     if (quiz.sets && quiz.sets.length > 0) {
+//       // Create a unique seed using User ID and Quiz ID
+//       const seed = req.user._id.toString() + quiz._id.toString();
+//       const hash = seed.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
       
-      // Select the set based on the hash
-      const assignedSetIdx = hash % quiz.sets.length;
-      const assignedSet = quiz.sets[assignedSetIdx];
+//       // Select the set based on the hash
+//       const assignedSetIdx = hash % quiz.sets.length;
+//       const assignedSet = quiz.sets[assignedSetIdx];
 
-      const quizObj = quiz.toObject();
+//       const quizObj = quiz.toObject();
       
-      // Inject the assigned set's questions into the main questions field
-      quizObj.questions = assignedSet.questions; 
-      quizObj.assignedSetName = assignedSet.setName;
+//       // Inject the assigned set's questions into the main questions field
+//       quizObj.questions = assignedSet.questions; 
+//       quizObj.assignedSetName = assignedSet.setName;
       
-      // Security: Remove the full 'sets' array so students can't see other sets via Network tab
-      delete quizObj.sets; 
+//       // Security: Remove the full 'sets' array so students can't see other sets via Network tab
+//       delete quizObj.sets; 
 
-      return res.json({ success: true, quiz: quizObj });
-    }
-  }
+//       return res.json({ success: true, quiz: quizObj });
+//     }
+//   }
 
-  // Admin still sees everything including the full sets array
-  res.json({ success: true, quiz });
-});
+//   // Admin still sees everything including the full sets array
+//   res.json({ success: true, quiz });
+// });
 /* ------------------------------------------------------------------
    POST /api/quiz
    Creates a new quiz with the nested sets structure.
 ------------------------------------------------------------------ */
+// export const createQuiz = asyncHandler(async (req, res) => {
+//   const { title, category, sets, duration } = req.body;
+
+//   if (!title || !category || !sets || !Array.isArray(sets) || sets.length === 0) {
+//     res.status(400);
+//     throw new Error("Title, Category, and at least one Question Set are required.");
+//   }
+
+//   // Validate all questions in all sets
+//   sets.forEach((set, sIdx) => {
+//     if (!set.questions || set.questions.length === 0) {
+//       throw new Error(`Set '${set.setName || sIdx}' must have at least one question.`);
+//     }
+//     set.questions.forEach((q, qIdx) => validateQuestion(q, sIdx, qIdx));
+//   });
+
+//   const quiz = await Quiz.create({
+//     title,
+//     category,
+//     sets,
+//     duration: duration || 0,
+//   });
+
+//   res.status(201).json({
+//     success: true,
+//     quiz,
+//   });
+// });
+
 export const createQuiz = asyncHandler(async (req, res) => {
   const { title, category, sets, duration } = req.body;
 
-  if (!title || !category || !sets || !Array.isArray(sets) || sets.length === 0) {
+  if (!title || !category || !sets?.length) {
     res.status(400);
-    throw new Error("Title, Category, and at least one Question Set are required.");
+    throw new Error("Title, Category, and Sets are required");
   }
 
-  // Validate all questions in all sets
   sets.forEach((set, sIdx) => {
-    if (!set.questions || set.questions.length === 0) {
-      throw new Error(`Set '${set.setName || sIdx}' must have at least one question.`);
-    }
     set.questions.forEach((q, qIdx) => validateQuestion(q, sIdx, qIdx));
   });
 
-  const quiz = await Quiz.create({
-    title,
-    category,
-    sets,
-    duration: duration || 0,
-  });
-
-  res.status(201).json({
-    success: true,
-    quiz,
-  });
+  const quiz = await Quiz.create({ title, category, sets, duration });
+  res.status(201).json({ success: true, quiz });
 });
 
 /* ------------------------------------------------------------------
    PUT /api/quiz/:id
    Updates an existing quiz.
 ------------------------------------------------------------------ */
+// export const updateQuiz = asyncHandler(async (req, res) => {
+//   const quiz = await Quiz.findById(req.params.id);
+
+//   if (!quiz) {
+//     res.status(404);
+//     throw new Error("Quiz not found");
+//   }
+
+//   const { title, category, sets, duration } = req.body;
+
+//   if (title) quiz.title = title;
+//   if (category) quiz.category = category;
+//   if (duration !== undefined) quiz.duration = duration;
+  
+//   if (sets && Array.isArray(sets)) {
+//     sets.forEach((set, sIdx) => {
+//       set.questions.forEach((q, qIdx) => validateQuestion(q, sIdx, qIdx));
+//     });
+//     quiz.sets = sets;
+//   }
+
+//   const updatedQuiz = await quiz.save();
+
+//   res.json({
+//     success: true,
+//     quiz: updatedQuiz,
+//   });
+// });
+
 export const updateQuiz = asyncHandler(async (req, res) => {
   const quiz = await Quiz.findById(req.params.id);
-
   if (!quiz) {
     res.status(404);
     throw new Error("Quiz not found");
   }
 
   const { title, category, sets, duration } = req.body;
-
   if (title) quiz.title = title;
   if (category) quiz.category = category;
   if (duration !== undefined) quiz.duration = duration;
-  
-  if (sets && Array.isArray(sets)) {
-    sets.forEach((set, sIdx) => {
-      set.questions.forEach((q, qIdx) => validateQuestion(q, sIdx, qIdx));
-    });
+  if (sets) {
+    sets.forEach((set, sIdx) => set.questions.forEach((q, qIdx) => validateQuestion(q, sIdx, qIdx)));
     quiz.sets = sets;
   }
 
   const updatedQuiz = await quiz.save();
+  res.json({ success: true, quiz: updatedQuiz });
+});
 
-  res.json({
-    success: true,
-    quiz: updatedQuiz,
-  });
+export const getQuiz = asyncHandler(async (req, res) => {
+  const quiz = await Quiz.findById(req.params.id);
+  if (!quiz) {
+    res.status(404);
+    throw new Error("Quiz not found");
+  }
+
+  const isAdmin = req.user?.role === "admin";
+  if (!isAdmin) {
+    if (!quiz.isPublished) {
+      res.status(403);
+      throw new Error("Quiz is not live");
+    }
+
+    // Logic for Randomized Set Assignment for Student
+    if (quiz.sets && quiz.sets.length > 0) {
+      const seed = req.user._id.toString() + quiz._id.toString();
+      const hash = seed.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+      const assignedSet = quiz.sets[hash % quiz.sets.length];
+
+      const quizObj = quiz.toObject();
+      quizObj.questions = assignedSet.questions; // Flatten for UI
+      quizObj.assignedSetName = assignedSet.setName;
+      delete quizObj.sets; // Security: Hide other sets
+      return res.json({ success: true, quiz: quizObj });
+    }
+  }
+  res.json({ success: true, quiz });
 });
 
 /* ------------------------------------------------------------------
