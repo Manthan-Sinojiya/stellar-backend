@@ -120,26 +120,19 @@
 //   });
 // });
 
-
 import asyncHandler from "express-async-handler";
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import User from "../models/User.js";
 import { sendOtp } from "../services/awsSnsService.js";
 
-/**
- * Helper to generate 6-digit numeric OTP
- */
 const generateOtp = () =>
   Math.floor(100000 + Math.random() * 900000).toString();
 
-/* =====================================================
-   SEND RESET OTP
-   POST /api/settings/reset-password/send-otp
-===================================================== */
+// @desc    Send Reset Password OTP
+// @route   POST /api/settings/reset-password/send-otp
 export const sendResetPasswordOtp = asyncHandler(async (req, res) => {
   const { mobile } = req.body;
-
   if (!mobile) {
     res.status(400);
     throw new Error("Mobile number is required");
@@ -152,19 +145,13 @@ export const sendResetPasswordOtp = asyncHandler(async (req, res) => {
   }
 
   const otp = generateOtp();
-
-  // Hash the OTP before saving to DB for security
-  const hashedOtp = crypto
-    .createHash("sha256")
-    .update(otp)
-    .digest("hex");
+  const hashedOtp = crypto.createHash("sha256").update(otp).digest("hex");
 
   user.resetOtp = hashedOtp;
-  user.resetOtpExpiry = Date.now() + 5 * 60 * 1000; // Valid for 5 minutes
+  user.resetOtpExpiry = Date.now() + 5 * 60 * 1000; 
 
   await user.save();
 
-  // Trigger AWS SNS Service
   try {
     await sendOtp(mobile, otp, "RESET_PASSWORD");
   } catch (error) {
@@ -172,16 +159,11 @@ export const sendResetPasswordOtp = asyncHandler(async (req, res) => {
     throw new Error("Failed to send SMS. Please try again later.");
   }
 
-  res.json({
-    success: true,
-    message: "OTP sent to registered mobile number",
-  });
+  res.json({ success: true, message: "OTP sent to registered mobile number" });
 });
 
-/* =====================================================
-   VERIFY OTP & RESET PASSWORD
-   POST /api/settings/reset-password/verify
-===================================================== */
+// @desc    Verify OTP and update password
+// @route   POST /api/settings/reset-password/verify
 export const verifyOtpAndResetPassword = asyncHandler(async (req, res) => {
   const { mobile, otp, newPassword } = req.body;
 
@@ -190,16 +172,12 @@ export const verifyOtpAndResetPassword = asyncHandler(async (req, res) => {
     throw new Error("All fields (mobile, otp, new password) are required");
   }
 
-  // Hash the incoming OTP to compare with stored hash
-  const hashedOtp = crypto
-    .createHash("sha256")
-    .update(otp)
-    .digest("hex");
+  const hashedOtp = crypto.createHash("sha256").update(otp).digest("hex");
 
   const user = await User.findOne({
     mobile,
     resetOtp: hashedOtp,
-    resetOtpExpiry: { $gt: Date.now() }, // Must not be expired
+    resetOtpExpiry: { $gt: Date.now() },
   });
 
   if (!user) {
@@ -207,18 +185,12 @@ export const verifyOtpAndResetPassword = asyncHandler(async (req, res) => {
     throw new Error("Invalid or expired OTP");
   }
 
-  // Encrypt new password
   const salt = await bcrypt.genSalt(12);
   user.password = await bcrypt.hash(newPassword, salt);
-
-  // Clear OTP fields after successful update
   user.resetOtp = undefined;
   user.resetOtpExpiry = undefined;
 
   await user.save();
 
-  res.json({
-    success: true,
-    message: "Password has been successfully updated",
-  });
+  res.json({ success: true, message: "Password has been successfully updated" });
 });
