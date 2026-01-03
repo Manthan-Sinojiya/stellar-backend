@@ -10,8 +10,8 @@ import QuizResult from "../models/QuizResult.js";
 export const submitQuizResult = asyncHandler(async (req, res) => {
   // 1. Verify Authentication Context
   // req.user is populated by the protect middleware
-  const userId = req.user?._id;
-
+  // const userId = req.user?._id;
+  const userId = req.user._id || req.user.id;
   if (!userId) {
     res.status(401);
     throw new Error("Unauthorized: User session not found");
