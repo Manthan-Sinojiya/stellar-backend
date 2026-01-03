@@ -9,6 +9,23 @@ const s3 = new S3Client({
   },
 });
 
+// export const getSignedUploadUrl = async ({ fileName, fileType, folder }) => {
+//   const key = `${folder}/${Date.now()}-${fileName}`;
+
+//   const command = new PutObjectCommand({
+//     Bucket: process.env.AWS_BUCKET,
+//     Key: key,
+//     ContentType: fileType,
+//   });
+
+//   const uploadUrl = await getSignedUrl(s3, command, { expiresIn: 300 });
+
+//   return {
+//     uploadUrl,
+//     fileUrl: `https://${process.env.AWS_BUCKET}.s3.amazonaws.com/${key}`,
+//   };
+// };
+
 export const getSignedUploadUrl = async ({ fileName, fileType, folder }) => {
   const key = `${folder}/${Date.now()}-${fileName}`;
 
@@ -22,6 +39,7 @@ export const getSignedUploadUrl = async ({ fileName, fileType, folder }) => {
 
   return {
     uploadUrl,
-    fileUrl: `https://${process.env.AWS_BUCKET}.s3.amazonaws.com/${key}`,
+    // CHANGE THIS: Return only the key/path to store in the DB
+    fileUrl: `/${key}`, 
   };
 };

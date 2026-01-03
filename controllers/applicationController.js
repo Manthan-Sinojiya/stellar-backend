@@ -34,21 +34,49 @@ export const uploadEducationFile = async (req, res) => {
   res.json({ uploadUrl, fileUrl });
 };
 
-export const saveEducation = async (req, res) => {
+export const saveEducation = asyncHandler(async (req, res) => {
   const { level, percentage, cgpa, marksheetUrl } = req.body;
 
-  if (!marksheetUrl)
-    return res.status(400).json({ message: "Marksheet required" });
+  // 1. Basic Validation
+  if (!marksheetUrl) {
+    res.status(400);
+    throw new Error("Marksheet URL is required");
+  }
 
-  const record = await Education.create({
-    userId: req.user.id,
-    level,
-    percentage,
-    cgpa,
-    marksheetUrl,
-  });
+  // 2. Strict Score Validation (Backend Guard)
+  if (percentage !== null && percentage !== undefined) {
+    const pVal = parseFloat(percentage);
+    if (pVal < 0 || pVal > 100) {
+      res.status(400);
+      throw new Error("Invalid Percentage: Must be between 0 and 100");
+    }
+  }
 
-  // IMPORTANT: Update application progress so Step 2 shows as done
+  if (cgpa !== null && cgpa !== undefined) {
+    const cVal = parseFloat(cgpa);
+    if (cVal < 0 || cVal > 10) {
+      res.status(400);
+      throw new Error("Invalid CGPA: Must be between 0 and 10");
+    }
+  }
+
+  // 3. Create or Update existing level record for this user
+  // Using findOneAndUpdate allows students to fix mistakes before final submission
+  const record = await Education.findOneAndUpdate(
+    { userId: req.user.id, level },
+    {
+      userId: req.user.id,
+      level,
+      percentage: percentage || null,
+      cgpa: cgpa || null,
+      marksheetUrl,
+    },
+    { upsert: true, new: true }
+  );
+
+  // 4. Update progress
+  // Note: Usually, we check if both 10th AND 12th exist before setting true,
+  // but here we mark it true to signal the step has been interacted with.
   await ApplicationProgress.findOneAndUpdate(
     { userId: req.user.id },
     { step2Completed: true },
@@ -56,7 +84,7 @@ export const saveEducation = async (req, res) => {
   );
 
   res.json({ success: true, record });
-};
+});
 
 /* --------------------------------------------------
    GET /api/applications/education
@@ -88,24 +116,6 @@ export const completeAptitudeStep = asyncHandler(async (req, res) => {
    POST /api/application/certification
    Step-4: Add certification
 ------------------------------------------------------------------ */
-// export const addCertification = asyncHandler(async (req, res) => {
-//   await Certification.create({
-//     ...req.body,
-//     userId: req.user.id,
-//   });
-
-//   await ApplicationProgress.findOneAndUpdate(
-//     { userId: req.user.id },
-//     { step4Completed: true }
-//   );
-
-//   res.json({ success: true, message: "Certification added" });
-// });
-
-/* controllers/applicationController.js */
-
-/* controllers/applicationController.js */
-
 export const addCertification = asyncHandler(async (req, res) => {
   const { title, organisation, certificateType, issueDate, certificateUrl } =
     req.body;
@@ -146,67 +156,6 @@ export const getCertifications = asyncHandler(async (req, res) => {
    POST /api/application/interview
    Step-5: Schedule interview
 ------------------------------------------------------------------ */
-// export const scheduleInterview = asyncHandler(async (req, res) => {
-//   const { interviewDate } = req.body;
-
-//   if (!interviewDate) {
-//     res.status(400);
-//     throw new Error("Interview date required");
-//   }
-
-//   // 1. Update Progress
-//   await ApplicationProgress.findOneAndUpdate(
-//     { userId: req.user.id },
-//     { step5Completed: true, interviewDate },
-//     { upsert: true }
-//   );
-
-//   // 2. Update or Create Application Record
-//   let application = await Application.findOne({ userId: req.user.id });
-//   if (!application) {
-//     application = await Application.create({
-//       userId: req.user.id,
-//       interviewDate,
-//     });
-//   } else {
-//     application.interviewDate = interviewDate;
-//     await application.save();
-//   }
-
-//   // 3. Generate PDF Buffer
-//   const user = await User.findById(req.user.id);
-//   const pdfBuffer = await generateApplicationPDF({
-//     ...user.toObject(),
-//     interviewDate,
-//     quizSummary: "Completed",
-//   });
-
-//   // 4. Stream Buffer to GridFS
-//   const bucket = req.app.locals.gridFSBucket;
-//   const uploadStream = bucket.openUploadStream(
-//     `application_${application._id}.pdf`,
-//     { contentType: "application/pdf" }
-//   );
-
-//   uploadStream.end(pdfBuffer);
-
-//   uploadStream.on("finish", async () => {
-//     // 5. Link the GridFS File ID to the Application model
-//     application.pdfFileId = uploadStream.id;
-//     await application.save();
-
-//     res.json({
-//       success: true,
-//       applicationId: application._id,
-//     });
-//   });
-
-//   uploadStream.on("error", (err) => {
-//     res.status(500);
-//     throw new Error("PDF Storage Failed: " + err.message);
-//   });
-// });
-
 export const scheduleInterview = asyncHandler(async (req, res) => {
   const { interviewDate } = req.body;
   const userId = req.user.id;
@@ -220,7 +169,7 @@ export const scheduleInterview = asyncHandler(async (req, res) => {
     ...user,
     interviewDate,
     educations,
-    certifications
+    certifications,
   };
 
   // 2. Generate Buffer
@@ -228,15 +177,17 @@ export const scheduleInterview = asyncHandler(async (req, res) => {
 
   // 3. GridFS Storage
   const bucket = req.app.locals.gridFSBucket;
-  
+
   // Cleanup old PDF if exists
   let application = await Application.findOne({ userId });
   if (application?.pdfFileId) {
-    try { await bucket.delete(application.pdfFileId); } catch (e) {}
+    try {
+      await bucket.delete(application.pdfFileId);
+    } catch (e) {}
   }
 
   const uploadStream = bucket.openUploadStream(`app_${userId}.pdf`, {
-    contentType: 'application/pdf',
+    contentType: "application/pdf",
   });
 
   uploadStream.end(pdfBuffer);
@@ -244,7 +195,11 @@ export const scheduleInterview = asyncHandler(async (req, res) => {
   // Ensure database update happens AFTER stream finish
   uploadStream.on("finish", async () => {
     if (!application) {
-      application = await Application.create({ userId, interviewDate, pdfFileId: uploadStream.id });
+      application = await Application.create({
+        userId,
+        interviewDate,
+        pdfFileId: uploadStream.id,
+      });
     } else {
       application.interviewDate = interviewDate;
       application.pdfFileId = uploadStream.id;
@@ -252,7 +207,11 @@ export const scheduleInterview = asyncHandler(async (req, res) => {
     }
 
     // Mark step 5 complete
-    await ApplicationProgress.findOneAndUpdate({ userId }, { step5Completed: true }, { upsert: true });
+    await ApplicationProgress.findOneAndUpdate(
+      { userId },
+      { step5Completed: true },
+      { upsert: true }
+    );
 
     res.json({ success: true, applicationId: application._id });
   });
@@ -300,6 +259,10 @@ export const getProgress = asyncHandler(async (req, res) => {
   res.json({ success: true, progress });
 });
 
+/* ------------------------------------------------------------------
+   POST /api/application/profile/complete
+   Step-1: Finalize Parent Details and mark Step 1 complete
+------------------------------------------------------------------ */
 export const completeProfileStep = asyncHandler(async (req, res) => {
   const {
     fatherMobile,
@@ -312,40 +275,50 @@ export const completeProfileStep = asyncHandler(async (req, res) => {
     extracurriculars,
   } = req.body;
 
-  const clean = (val) =>
-    val === undefined || val === null || String(val).trim() === "" ? null : val;
-
-  const fatherIncomeClean = clean(fatherIncome);
+  // Helper to check for actual content
+  const isValidString = (val) => val && String(val).trim().length > 0;
 
   // 1. Mandatory Validation for Parent Details
   if (
-    !fatherMobile ||
-    !fatherHighestEducation ||
-    !fatherOccupation ||
-    !fatherIncomeClean ||
-    !motherName ||
-    !motherEducation ||
-    !motherOccupation
+    !isValidString(fatherMobile) ||
+    !isValidString(fatherHighestEducation) ||
+    !isValidString(fatherOccupation) ||
+    !isValidString(fatherIncome) ||
+    !isValidString(motherName) ||
+    !isValidString(motherEducation) ||
+    !isValidString(motherOccupation)
   ) {
     res.status(400);
-    throw new Error(
-      "All parent details (including Father's Mobile) are compulsory."
-    );
+    throw new Error("All parent details are compulsory.");
   }
 
-  // 2. Update User Profile with the new parent/extra data
+  // 2. Format Validation: Father's Mobile (Exactly 10 Digits)
+  const mobileRegex = /^[0-9]{10}$/;
+  if (!mobileRegex.test(fatherMobile)) {
+    res.status(400);
+    throw new Error("Father's mobile number must be a valid 10-digit number.");
+  }
+
+  // 3. Format Validation: Father's Income (Positive Number)
+  const incomeNum = Number(fatherIncome);
+  if (isNaN(incomeNum) || incomeNum < 0) {
+    res.status(400);
+    throw new Error("Annual income must be a valid positive number.");
+  }
+
+  // 4. Update User Profile with sanitized data
   await User.findByIdAndUpdate(req.user.id, {
-    fatherMobile,
-    fatherHighestEducation,
-    fatherOccupation,
-    fatherIncome: fatherIncome.toString(), // Store as string to match your User Model
-    motherName,
-    motherEducation,
-    motherOccupation,
-    extracurriculars,
+    fatherMobile: fatherMobile.trim(),
+    fatherHighestEducation: fatherHighestEducation.trim(),
+    fatherOccupation: fatherOccupation.trim(),
+    fatherIncome: incomeNum.toString(),
+    motherName: motherName.trim(),
+    motherEducation: motherEducation.trim(),
+    motherOccupation: motherOccupation.trim(),
+    extracurriculars: extracurriculars ? extracurriculars.trim() : null,
   });
 
-  // 3. Mark Step 1 as completed
+  // 5. Mark Step 1 as completed in progress tracker
   await ApplicationProgress.findOneAndUpdate(
     { userId: req.user.id },
     { step1Completed: true },
@@ -354,7 +327,7 @@ export const completeProfileStep = asyncHandler(async (req, res) => {
 
   res.json({
     success: true,
-    message: "Profile and parent details validated successfully",
+    message: "Profile validated and saved successfully",
   });
 });
 
