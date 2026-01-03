@@ -1,90 +1,67 @@
-/**
- * ------------------------------------------------------------------
- * QUIZ RESULT CONTROLLER
- * ------------------------------------------------------------------
- * Responsibilities:
- * - Accept quiz submissions from students
- * - Evaluate answers against the ASSIGNED SET only
- * - Prevent multiple attempts
- * - Store detailed audit-friendly evaluation
- * - Compute score & percentage securely on backend
- *
- * Supports:
- * - MCQ
- * - Checkbox
- * - Text
- * - Multi-set quizzes
- * ------------------------------------------------------------------
- */
-
 import asyncHandler from "express-async-handler";
 import Quiz from "../models/Quiz.js";
 import QuizResult from "../models/QuizResult.js";
 
-/* ------------------------------------------------------------------
-   POST /api/quizresult/submit
-   - Student submits quiz answers
-   - Requires authentication
------------------------------------------------------------------- */
+/**
+ * @desc    Submit quiz answers and evaluate score
+ * @route   POST /api/quizresult/submit
+ * @access  Private (Student)
+ */
 export const submitQuizResult = asyncHandler(async (req, res) => {
+  // 1. Verify Authentication Context
+  // req.user is populated by the protect middleware
   const userId = req.user?._id;
 
   if (!userId) {
     res.status(401);
-    throw new Error("Unauthorized");
+    throw new Error("Unauthorized: User session not found");
   }
 
+  // 2. Destructure Request Body
   const { quizId, answers, assignedSetName } = req.body;
 
   if (!quizId || !Array.isArray(answers) || !assignedSetName) {
     res.status(400);
-    throw new Error("quizId, answers, and assignedSetName are required");
+    throw new Error("Invalid submission: quizId, answers, and assignedSetName are required");
   }
 
-  /* ---------------- LOAD QUIZ ---------------- */
+  // 3. Load the Quiz and Validate Metadata
   const quiz = await Quiz.findById(quizId);
   if (!quiz) {
     res.status(404);
-    throw new Error("Quiz not found");
+    throw new Error("Assessment not found");
   }
 
-  /* ---------------- PREVENT RE-ATTEMPT ---------------- */
-  const existingAttempt = await QuizResult.findOne({
-    quizId,
-    userId,
-  });
-
+  // 4. Prevent Multiple Attempts
+  // Uses the unique index (userId + quizId) defined in the model
+  const existingAttempt = await QuizResult.findOne({ quizId, userId });
   if (existingAttempt) {
     res.status(400);
-    throw new Error("You have already attempted this quiz");
+    throw new Error("Access Denied: You have already submitted this assessment");
   }
 
-  /* ---------------- GET ASSIGNED SET ---------------- */
-  const assignedSet = quiz.sets.find(
-    (set) => set.setName === assignedSetName
-  );
-
+  // 5. Fetch the Specific Set Assigned to the User
+  const assignedSet = quiz.sets.find((set) => set.setName === assignedSetName);
   if (!assignedSet) {
     res.status(400);
-    throw new Error("Invalid assigned set");
+    throw new Error(`Technical Error: Set '${assignedSetName}' is not valid for this quiz`);
   }
 
   let score = 0;
   const evaluatedAnswers = [];
 
-  /* ------------------------------------------------------------------
-     EVALUATION LOOP
-  ------------------------------------------------------------------ */
+  // 6. Evaluation Logic Loop
   assignedSet.questions.forEach((question, index) => {
+    // Note: The frontend must send answers in the same order as assignedSet.questions
     const submitted = answers[index];
     let isCorrect = false;
 
-    /* ---------------- MCQ ---------------- */
+    /* --- MCQ Evaluation --- */
     if (question.type === "mcq") {
       const correctIndex = question.options.indexOf(question.answer);
-      const userIndex = Number(submitted?.selectedIndex);
+      const userIndex = submitted?.selectedIndex !== undefined ? Number(submitted.selectedIndex) : null;
 
-      if (userIndex === correctIndex) {
+      if (userIndex === correctIndex && userIndex !== null) {
         isCorrect = true;
         score++;
       }
@@ -99,19 +76,24 @@ export const submitQuizResult = asyncHandler(async (req, res) => {
       });
     }
 
-    /* ---------------- CHECKBOX ---------------- */
-    if (question.type === "checkbox") {
-      const correctAnswers = question.answer.map((a) => a.trim());
-      const userAnswers = (submitted?.selected || []).map((a) => a.trim());
+    /* --- Checkbox Evaluation --- */
+    else if (question.type === "checkbox") {
+      // Ensure we are comparing clean, trimmed arrays
+      const correctAnswers = Array.isArray(question.answer) 
+        ? question.answer.map((a) => String(a).trim()) 
+        : [];
+      const userAnswers = Array.isArray(submitted?.selected) 
+        ? submitted.selected.map((a) => String(a).trim()) 
+        : [];
 
       const correctSet = new Set(correctAnswers);
       const userSet = new Set(userAnswers);
 
-      const matched =
+      const isMatched =
         correctSet.size === userSet.size &&
         [...correctSet].every((ans) => userSet.has(ans));
 
-      if (matched) {
+      if (isMatched && correctSet.size > 0) {
         isCorrect = true;
         score++;
       }
@@ -126,12 +108,12 @@ export const submitQuizResult = asyncHandler(async (req, res) => {
       });
     }
 
-    /* ---------------- TEXT ---------------- */
-    if (question.type === "text") {
-      const correctText = question.answer.trim().toLowerCase();
-      const userText = (submitted?.written || "").trim().toLowerCase();
+    /* --- Text Evaluation --- */
+    else if (question.type === "text") {
+      const correctText = String(question.answer).trim().toLowerCase();
+      const userText = String(submitted?.written || "").trim().toLowerCase();
 
-      if (correctText === userText) {
+      if (correctText === userText && correctText !== "") {
         isCorrect = true;
         score++;
       }
@@ -141,17 +123,17 @@ export const submitQuizResult = asyncHandler(async (req, res) => {
         question: question.question,
         type: "text",
         correctText: question.answer,
-        userText: submitted?.written,
+        userText: submitted?.written || "",
         isCorrect,
       });
     }
   });
 
-  /* ---------------- FINAL SCORE ---------------- */
+  // 7. Calculate Final Metrics
   const totalMarks = assignedSet.questions.length;
-  const percentage = Math.round((score / totalMarks) * 100);
+  const percentage = totalMarks > 0 ? Math.round((score / totalMarks) * 100) : 0;
 
-  /* ---------------- SAVE RESULT ---------------- */
+  // 8. Persist Result to Database
   const quizResult = await QuizResult.create({
     userId,
     quizId,
@@ -163,15 +145,32 @@ export const submitQuizResult = asyncHandler(async (req, res) => {
     answers: evaluatedAnswers,
   });
 
-  /* ---------------- RESPONSE ---------------- */
+  // 9. Send Response
   res.status(201).json({
     success: true,
-    message: "Quiz submitted successfully",
+    message: "Assessment submitted and evaluated successfully",
     result: {
       id: quizResult._id,
       score,
-      percentage,
       totalMarks,
+      percentage,
+      submittedAt: quizResult.createdAt
     },
+  });
+});
+
+/**
+ * @desc    Get current user's quiz results
+ * @route   GET /api/quizresult/my-results
+ * @access  Private
+ */
+export const getMyResults = asyncHandler(async (req, res) => {
+  const results = await QuizResult.find({ userId: req.user._id })
+    .populate("quizId", "title category")
+    .sort("-createdAt");
+
+  res.json({
+    success: true,
+    results,
   });
 });
