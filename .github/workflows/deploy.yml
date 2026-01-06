@@ -17,14 +17,10 @@ jobs:
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            rm -rf stellar
-            cd stellar-backend
-            git pull origin master
-            docker build -t stellar-backend .
+            rm -rf stellar-backend
+            echo "Stopping and removing existing container..."
             docker stop stellar-api || true
             docker rm stellar-api || true
-            docker run -d \
-              --name stellar-api \
-              -p 5000:5000 \
-              --env-file .env \
-              stellar-backend
+
+            echo "Removing old Docker image..."
+            docker rmi stellar-backend || true
