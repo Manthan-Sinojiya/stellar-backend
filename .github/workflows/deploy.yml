@@ -17,6 +17,7 @@ jobs:
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
+            rm -rf stellar
             cd stellar-backend
             git pull origin master
             docker build -t stellar-backend .
