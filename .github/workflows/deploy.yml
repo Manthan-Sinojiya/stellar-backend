@@ -1,3 +1,29 @@
+# name: Deploy Backend
+
+# on:
+#   push:
+#     branches: ["master"]
+
+# jobs:
+#   deploy:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - uses: actions/checkout@v4
+
+#       - name: Deploy to EC2
+#         uses: appleboy/ssh-action@v1.0.3
+#         with:
+#           host: ${{ secrets.EC2_HOST }}
+#           username: ubuntu
+#           key: ${{ secrets.EC2_SSH_KEY }}
+#           script: |
+#             rm -rf stellar-backend
+#             echo "Stopping and removing existing container..."
+#             docker stop stellar-api || true
+#             docker rm stellar-api || true
+
+#             echo "Removing old Docker image..."
+#             docker rmi stellar-backend || true
 name: Deploy Backend
 
 on:
@@ -17,10 +43,13 @@ jobs:
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            rm -rf stellar-backend
-            echo "Stopping and removing existing container..."
+            cd stellar-backend
+            git pull origin master
+            docker build -t stellar-backend .
             docker stop stellar-api || true
             docker rm stellar-api || true
-
-            echo "Removing old Docker image..."
-            docker rmi stellar-backend || true
+            docker run -d \
+              --name stellar-api \
+              -p 5000:5000 \
+              --env-file .env \
+              stellar-backend
