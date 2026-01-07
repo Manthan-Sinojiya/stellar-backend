@@ -22,6 +22,7 @@ import QuizResult from "../models/QuizResult.js";
 import ApplicationProgress from "../models/ApplicationProgress.js";
 import bcrypt from "bcryptjs";
 import asyncHandler from "express-async-handler";
+import { sendPaymentSuccessEmail } from "../utils/sendPaymentEmail.js";
 
 /* ------------------------------------------------------------------
    GET /api/users
@@ -98,7 +99,16 @@ export const createUser = asyncHandler(async (req, res) => {
     email,
     password: hashedPassword,
     role,
+    mobile,
   });
+
+  try {
+    await sendPaymentSuccessEmail(user);
+  } catch (emailError) {
+    console.error("Email failed to send:", emailError);
+    // We don't throw error here so the user creation still succeeds 
+    // but you might want to log it.
+  }
 
   res.json({
     success: true,
@@ -158,4 +168,20 @@ export const deleteUser = asyncHandler(async (req, res) => {
     success: true,
     message: "User deleted",
   });
+});
+
+export const sendManualEmail = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.params.id);
+  
+  if (!user) {
+    return res.status(404).json({ success: false, message: "User not found" });
+  }
+
+  try {
+    await sendPaymentSuccessEmail(user);
+    res.json({ success: true, message: "Email sent successfully" });
+  } catch (error) {
+    console.error("Manual Email Error:", error);
+    res.status(500).json({ success: false, message: "Failed to send email" });
+  }
 });

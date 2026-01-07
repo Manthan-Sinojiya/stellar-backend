@@ -44,4 +44,5 @@ router.put("/:id", updateUser);
 ------------------------------------------------------------------ */
 router.delete("/:id", deleteUser);
 
+router.post("/:id/send-email", sendManualEmail);
 export default router;
