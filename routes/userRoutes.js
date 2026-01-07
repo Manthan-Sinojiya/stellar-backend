@@ -20,6 +20,7 @@ import {
   createUser,
   updateUser,
   deleteUser,
+  sendManualEmail
 } from "../controllers/userController.js";
 
 const router = express.Router();
@@ -45,4 +46,5 @@ router.put("/:id", updateUser);
 router.delete("/:id", deleteUser);
 
 router.post("/:id/send-email", sendManualEmail);
+
 export default router;
