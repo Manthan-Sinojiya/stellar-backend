@@ -78,6 +78,8 @@ app.use("/uploads", express.static("uploads"));
    - /api/otp           → OTP registration flow
    - /api/users         → Admin user management
    - /api/demo-call     → Demo call booking & admin view
+   - /api/application   → Student Application Process
+   - /api/settings      → Change Password
 ------------------------------------------------------------------ */
 app.use("/api/auth", authRoutes);
 app.use("/api/quiz", quizRoutes);

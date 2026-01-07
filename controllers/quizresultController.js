@@ -79,11 +79,11 @@
 //     /* --- Checkbox Evaluation --- */
 //     else if (question.type === "checkbox") {
 //       // Ensure we are comparing clean, trimmed arrays
-//       const correctAnswers = Array.isArray(question.answer) 
-//         ? question.answer.map((a) => String(a).trim()) 
+//       const correctAnswers = Array.isArray(question.answer)
+//         ? question.answer.map((a) => String(a).trim())
 //         : [];
-//       const userAnswers = Array.isArray(submitted?.selected) 
-//         ? submitted.selected.map((a) => String(a).trim()) 
+//       const userAnswers = Array.isArray(submitted?.selected)
+//         ? submitted.selected.map((a) => String(a).trim())
 //         : [];
 
 //       const correctSet = new Set(correctAnswers);
@@ -195,7 +195,9 @@ export const submitQuizResult = asyncHandler(async (req, res) => {
 
   if (!quizId || !Array.isArray(answers) || !assignedSetName) {
     res.status(400);
-    throw new Error("Invalid submission: quizId, answers, and assignedSetName are required");
+    throw new Error(
+      "Invalid submission: quizId, answers, and assignedSetName are required"
+    );
   }
 
   const quiz = await Quiz.findById(quizId);
@@ -214,6 +216,7 @@ export const submitQuizResult = asyncHandler(async (req, res) => {
   const POINT_PER_CORRECT = 4;
   const POINT_PER_WRONG = -1;
   let score = 0;
+  let attemptedCount = 0;
   const evaluatedAnswers = [];
 
   assignedSet.questions.forEach((question, index) => {
@@ -223,11 +226,15 @@ export const submitQuizResult = asyncHandler(async (req, res) => {
 
     // Determine if the question was attempted based on type
     if (question.type === "mcq") {
-      isAttempted = submitted?.selectedIndex !== undefined && submitted?.selectedIndex !== null;
+      isAttempted =
+        submitted?.selectedIndex !== undefined &&
+        submitted?.selectedIndex !== null;
     } else if (question.type === "checkbox") {
-      isAttempted = Array.isArray(submitted?.selected) && submitted.selected.length > 0;
+      isAttempted =
+        Array.isArray(submitted?.selected) && submitted.selected.length > 0;
     } else if (question.type === "text") {
-      isAttempted = submitted?.written && String(submitted.written).trim() !== "";
+      isAttempted =
+        submitted?.written && String(submitted.written).trim() !== "";
     }
 
     /* --- Evaluation Logic --- */
@@ -235,49 +242,72 @@ export const submitQuizResult = asyncHandler(async (req, res) => {
       const correctIndex = question.options.indexOf(question.answer);
       const userIndex = isAttempted ? Number(submitted.selectedIndex) : null;
       isCorrect = userIndex === correctIndex;
-      
+
       evaluatedAnswers.push({
-        questionId: index, question: question.question, type: "mcq",
-        correctIndex, userIndex, isCorrect,
+        questionId: index,
+        question: question.question,
+        type: "mcq",
+        correctIndex,
+        userIndex,
+        isCorrect,
       });
-    } 
-    else if (question.type === "checkbox") {
-      const correctAnswers = Array.isArray(question.answer) ? question.answer.map(a => String(a).trim()) : [];
-      const userAnswers = isAttempted ? submitted.selected.map(a => String(a).trim()) : [];
-      isCorrect = correctAnswers.length === userAnswers.length && correctAnswers.every(ans => userAnswers.includes(ans));
-      
+    } else if (question.type === "checkbox") {
+      const correctAnswers = Array.isArray(question.answer)
+        ? question.answer.map((a) => String(a).trim())
+        : [];
+      const userAnswers = isAttempted
+        ? submitted.selected.map((a) => String(a).trim())
+        : [];
+      isCorrect =
+        correctAnswers.length === userAnswers.length &&
+        correctAnswers.every((ans) => userAnswers.includes(ans));
+
       evaluatedAnswers.push({
-        questionId: index, question: question.question, type: "checkbox",
-        correctAnswers, userAnswers, isCorrect,
+        questionId: index,
+        question: question.question,
+        type: "checkbox",
+        correctAnswers,
+        userAnswers,
+        isCorrect,
       });
-    } 
-    else if (question.type === "text") {
+    } else if (question.type === "text") {
       const correctText = String(question.answer).trim().toLowerCase();
-      const userText = isAttempted ? String(submitted.written).trim().toLowerCase() : "";
+      const userText = isAttempted
+        ? String(submitted.written).trim().toLowerCase()
+        : "";
       isCorrect = correctText === userText;
-      
+
       evaluatedAnswers.push({
-        questionId: index, question: question.question, type: "text",
-        correctText: question.answer, userText: submitted?.written || "", isCorrect,
+        questionId: index,
+        question: question.question,
+        type: "text",
+        correctText: question.answer,
+        userText: submitted?.written || "",
+        isCorrect,
       });
     }
 
     // --- APPLY SCORING LOGIC ---
     if (isAttempted) {
+      attemptedCount++; // ✅ COUNT ATTEMPTS
+
       if (isCorrect) {
-        score += POINT_PER_CORRECT; // Add 4
+        score += POINT_PER_CORRECT;
       } else {
-        score += POINT_PER_WRONG; // Subtract 1
+        score += POINT_PER_WRONG;
       }
     }
     // If not attempted, score remains unchanged (0 points)
   });
 
   const totalPossibleScore = assignedSet.questions.length * POINT_PER_CORRECT;
-  
+
   // Prevent negative final score display (Optional: set to 0 if negative)
-  const finalScore = score < 0 ? 0 : score; 
-  const percentage = totalPossibleScore > 0 ? Math.round((finalScore / totalPossibleScore) * 100) : 0;
+  const finalScore = score < 0 ? 0 : score;
+  const percentage =
+    totalPossibleScore > 0
+      ? Math.round((finalScore / totalPossibleScore) * 100)
+      : 0;
 
   const quizResult = await QuizResult.findOneAndUpdate(
     { userId, quizId },
@@ -285,7 +315,7 @@ export const submitQuizResult = asyncHandler(async (req, res) => {
       assignedSetName,
       score: finalScore,
       totalMarks: totalPossibleScore,
-      attempted: assignedSet.questions.length,
+      attempted: attemptedCount,
       percentage,
       answers: evaluatedAnswers,
     },
