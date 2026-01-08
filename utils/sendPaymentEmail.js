@@ -776,7 +776,7 @@ export const sendPaymentSuccessEmail = async (user) => {
 
     // 3. Title & Metadata
     doc
-      .fillColor("#ffffff")
+      .fillColor("#cf27e9ff")
       .font("Helvetica-Bold")
       .fontSize(20)
       .text("PAYMENT RECEIPT", 115, 35, { characterSpacing: 1 });
