@@ -10,7 +10,7 @@ export const sendPaymentSuccessEmail = async (user) => {
   doc.on("data", (chunk) => chunks.push(chunk));
 
   // --- PDF BRANDING & HEADER ---
-  const logoPath = path.join(process.cwd(), "stellar-logo.png");
+  const logoPath = path.join(process.cwd(), "logo.png");
   if (fs.existsSync(logoPath)) {
     doc.image(logoPath, 50, 45, { width: 80 });
   }
