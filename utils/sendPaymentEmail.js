@@ -1142,7 +1142,7 @@ export const sendPaymentSuccessEmail = async (user) => {
       },
       {
         filename: "Stellar_Interview_Curriculum.pdf",
-        path: path.join(assetsPath, "Interview_Curriculum.pdf"),
+        path: path.join(assetsPath, "SEE Interview Curriculum.pdf"),
       },
     ],
   });
