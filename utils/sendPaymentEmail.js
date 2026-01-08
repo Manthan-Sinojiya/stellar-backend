@@ -982,6 +982,7 @@ export const sendPaymentSuccessEmail = async (user) => {
   const COLORS = {
     primary: "#0f172a",
     accent: "#6d28d9", 
+    logoPurple: "#9333ea", // Extracted purple from your logo
     textDark: "#1e293b",
     textLight: "#64748b",
     divider: "#e2e8f0",
@@ -1002,12 +1003,11 @@ export const sendPaymentSuccessEmail = async (user) => {
     }
 
     doc
-      .fillColor("#bb24eeff") // Changed to white for better visibility on dark bg
-      .font("Helvetica-Bold")
+.fillColor(COLORS.logoPurple)      .font("Helvetica-Bold")
       .fontSize(20)
       .text("PAYMENT RECEIPT", 115, 35, { characterSpacing: 1 });
 
-    doc.fillColor("#000000ff").font("Helvetica").fontSize(8);
+    doc.fillColor("#000000").font("Helvetica").fontSize(8);
     doc.text(`RECEIPT NO: ST-${Date.now().toString().slice(-6)}`, 350, 75, {
       align: "right",
       width: 205,
