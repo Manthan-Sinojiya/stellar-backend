@@ -1002,12 +1002,12 @@ export const sendPaymentSuccessEmail = async (user) => {
     }
 
     doc
-      .fillColor("#ffffff") // Changed to white for better visibility on dark bg
+      .fillColor("#bb24eeff") // Changed to white for better visibility on dark bg
       .font("Helvetica-Bold")
       .fontSize(20)
       .text("PAYMENT RECEIPT", 115, 35, { characterSpacing: 1 });
 
-    doc.fillColor("#ffffff").font("Helvetica").fontSize(8);
+    doc.fillColor("#000000ff").font("Helvetica").fontSize(8);
     doc.text(`RECEIPT NO: ST-${Date.now().toString().slice(-6)}`, 350, 75, {
       align: "right",
       width: 205,
@@ -1079,7 +1079,7 @@ export const sendPaymentSuccessEmail = async (user) => {
     .text("STELLAR INSTITUTE OF TECHNOLOGY", 350, 485, { width: 140, align: "center" });
 
   doc.fontSize(22).text("PAID", 380, 515, { width: 80, align: "center" });
-  doc.fontSize(8).text("OFFICIAL RECEIPT", 360, 555, { width: 120, align: "center" });
+  doc.fontSize(8).text("APPLICATION RECEIPT", 360, 555, { width: 120, align: "center" });
 
   doc.restore();
 
