@@ -1007,7 +1007,7 @@ export const sendPaymentSuccessEmail = async (user) => {
       .fontSize(20)
       .text("PAYMENT RECEIPT", 115, 35, { characterSpacing: 1 });
 
-    doc.fillColor("#000000").font("Helvetica").fontSize(8);
+    doc.fillColor("#ffffffff").font("Helvetica").fontSize(8);
     doc.text(`RECEIPT NO: ST-${Date.now().toString().slice(-6)}`, 350, 75, {
       align: "right",
       width: 205,
