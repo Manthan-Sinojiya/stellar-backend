@@ -51,7 +51,7 @@ export const sendPaymentSuccessEmail = async (user) => {
 
   // 4. Send Mail
   await transporter.sendMail({
-    from: '"Stellar Admin" <no-reply@stellar.com>',
+    from: '"Stellar Admin" <admissions@stellarcampus.com>',
     to: user.email,
     subject: "Payment Confirmation - Stellar",
     text: `Hi ${user.fullName}, your payment of ₹2000 is complete.`,
