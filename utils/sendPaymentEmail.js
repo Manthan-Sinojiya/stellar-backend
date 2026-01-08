@@ -752,8 +752,8 @@ export const sendPaymentSuccessEmail = async (user) => {
 
   // Adjusting asset paths based on your provided reference (process.cwd)
   const assetsPath = path.join(process.cwd(), "assets");
-  const logoPath = path.join(assetsPath, "logo.png");
-  const headerBgPath = path.join(assetsPath, "header-bg.png");
+  // const logoPath = path.join(assetsPath, "logo.png");
+  const headerBgPath = path.join(assetsPath, "header-bg.jpg");
 
   /**
    * Helper Function to draw the Branded Header (Refactored from your reference)
@@ -770,9 +770,9 @@ export const sendPaymentSuccessEmail = async (user) => {
     }
 
     // 2. Logo
-    if (fs.existsSync(logoPath)) {
-      doc.image(logoPath, 40, 20, { width: 65 });
-    }
+    // if (fs.existsSync(logoPath)) {
+    //   doc.image(logoPath, 40, 20, { width: 65 });
+    // }
 
     // 3. Title & Metadata
     doc
@@ -860,24 +860,55 @@ export const sendPaymentSuccessEmail = async (user) => {
   doc.save();
   doc.opacity(0.12);
   doc.rotate(-20, { origin: [420, 520] });
+
   doc.circle(420, 520, 70).lineWidth(3).stroke("#15803d");
-  doc.fillColor("#15803d").font("Helvetica-Bold").fontSize(22).text("PAID", 380, 510, { width: 80, align: "center" });
+  doc.circle(420, 520, 58).lineWidth(1).stroke("#15803d");
+
+  doc
+    .fillColor("#15803d")
+    .font("Helvetica-Bold")
+    .fontSize(10)
+    .text(
+      "STELLAR INSTITUTE OF TECHNOLOGY",
+      350,
+      485,
+      { width: 140, align: "center" }
+    );
+
+  doc
+    .fontSize(22)
+    .text("PAID", 380, 515, {
+      width: 80,
+      align: "center",
+    });
+
+  doc
+    .fontSize(8)
+    .text("OFFICIAL RECEIPT", 360, 555, {
+      width: 120,
+      align: "center",
+    });
+
   doc.restore();
+  doc.opacity(1);
 
   /* ---------- FOOTER ---------- */
-  const pages = doc.bufferedPageRange();
-  for (let i = 0; i < pages.count; i++) {
-    doc.switchToPage(i);
-    doc
-      .fontSize(8)
-      .fillColor(COLORS.textLight)
-      .text(
-        "This is a digitally generated receipt. www.stellarinstitute.edu",
-        50,
-        795,
-        { align: "center", width: 495 }
-      );
-  }
+  doc
+    .fontSize(9)
+    .fillColor("#777")
+    .text(
+      "This is a digitally generated receipt issued by Stellar Institute of Technology. No signature required.",
+      50,
+      740,
+      { width: 495, align: "center" }
+    );
+
+  doc
+    .fillColor("#6d28d9")
+    .text(
+      "www.stellarcampus.com | admissions@stellarcampus.com",
+      { align: "center" }
+    );
 
   doc.end();
 
@@ -905,10 +936,19 @@ export const sendPaymentSuccessEmail = async (user) => {
       </div>
       <div style="padding:30px;color:#333">
         <p>Hi <b>${user.fullName}</b>,</p>
-        <p>We have successfully received your payment of <b>₹2,000</b>.</p>
-        <p>Your official receipt is attached for your reference.</p>
-        <p>Best Regards,<br/><b>Stellar Admissions Team</b></p>
-      </div>
+        <p>
+          We have successfully received your payment of <b>₹2,000</b>.
+        </p>
+        <p>
+          Your <b>official receipt</b> and the 
+          <b>Stellar Entrance Examination (SEE) – Curriculum</b>
+          are attached for your reference.
+        </p>
+        <p>
+          Best Regards,<br/>
+          <b>Stellar Admissions Team</b>
+        </p>
+        </div>
     </div>
   `;
 
@@ -922,6 +962,10 @@ export const sendPaymentSuccessEmail = async (user) => {
         filename: `Stellar_Receipt_${user.fullName.replace(/\s/g, "_")}.pdf`,
         content: pdfBuffer,
       },
+      {
+              filename: "Stellar_Entrance_Examination_SEE_Curriculum.pdf",
+              path: path.join(assetsPath, "SEE_Curriculum.pdf"),
+            },
     ],
   });
 };
