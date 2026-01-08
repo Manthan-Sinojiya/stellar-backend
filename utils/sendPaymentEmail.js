@@ -728,6 +728,243 @@
 //   });
 // };
 
+// import nodemailer from "nodemailer";
+// import PDFDocument from "pdfkit";
+// import path from "path";
+// import fs from "fs";
+
+// export const sendPaymentSuccessEmail = async (user) => {
+//   /* ==================================================
+//      CREATE PDF (Using New Branded Header Style)
+//   ================================================== */
+//   const doc = new PDFDocument({ size: "A4", margin: 40, bufferPages: true });
+//   const chunks = [];
+
+//   doc.on("data", (chunk) => chunks.push(chunk));
+
+//   const COLORS = {
+//     primary: "#0f172a",
+//     accent: "#6d28d9", // Keeping your purple brand color
+//     textDark: "#1e293b",
+//     textLight: "#64748b",
+//     divider: "#e2e8f0",
+//   };
+
+//   // Adjusting asset paths based on your provided reference (process.cwd)
+//   const assetsPath = path.join(process.cwd(), "assets");
+//   // const logoPath = path.join(assetsPath, "logo.png");
+//   const headerBgPath = path.join(assetsPath, "header-bg.jpg");
+
+//   /**
+//    * Helper Function to draw the Branded Header (Refactored from your reference)
+//    */
+//   const drawHeader = () => {
+//     const headerHeight = 115;
+//     const pageWidth = 595.28;
+
+//     // 1. Background
+//     if (fs.existsSync(headerBgPath)) {
+//       doc.image(headerBgPath, 0, 0, { width: pageWidth, height: headerHeight });
+//     } else {
+//       doc.rect(0, 0, pageWidth, headerHeight).fill(COLORS.primary);
+//     }
+
+//     // 3. Title & Metadata
+//     doc
+//       .fillColor("#1916eeff")
+//       .font("Helvetica-Bold")
+//       .fontSize(20)
+//       .text("PAYMENT RECEIPT", 115, 35, { characterSpacing: 1 });
+
+//     doc.fillColor("#ffffff").font("Helvetica").fontSize(8);
+//     doc.text(`RECEIPT NO: ST-${Date.now().toString().slice(-6)}`, 350, 75, {
+//       align: "right",
+//       width: 205,
+//     });
+//     doc.text(`DATE: ${new Date().toLocaleDateString("en-IN")}`, 350, 87, {
+//       align: "right",
+//       width: 205,
+//     });
+//   };
+
+//   // Initialize Header
+//   drawHeader();
+
+//   /* ---------- BILLING DETAILS ---------- */
+//   doc
+//     .fillColor(COLORS.textLight)
+//     .font("Helvetica-Bold")
+//     .fontSize(10)
+//     .text("BILLED TO", 50, 160);
+
+//   doc
+//     .fillColor(COLORS.textDark)
+//     .font("Helvetica")
+//     .fontSize(12)
+//     .text(user.fullName, 50, 175)
+//     .fontSize(10)
+//     .text(user.email)
+//     .text(user.mobile || "");
+
+//   /* ---------- PAYMENT TABLE ---------- */
+//   const tableTop = 240;
+
+//   // Table Header
+//   doc.rect(50, tableTop, 495, 30).fill(COLORS.primary);
+//   doc
+//     .fillColor("#ffffff")
+//     .font("Helvetica-Bold")
+//     .fontSize(10)
+//     .text("DESCRIPTION", 65, tableTop + 10)
+//     .text("QTY", 360, tableTop + 10)
+//     .text("AMOUNT", 445, tableTop + 10, { width: 90, align: "right" });
+
+//   // Table Row
+//   const rowY = tableTop + 45;
+//   doc
+//     .fillColor(COLORS.textDark)
+//     .font("Helvetica")
+//     .fontSize(11)
+//     .text("Registration Fee – Campus Admission", 65, rowY)
+//     .text("1", 360, rowY);
+
+//   doc
+//     .font("Helvetica-Bold")
+//     .text("₹ 2,000.00", 445, rowY, { width: 90, align: "right" });
+
+//   // Divider Line
+//   doc
+//     .strokeColor(COLORS.divider)
+//     .lineWidth(1)
+//     .moveTo(50, rowY + 25)
+//     .lineTo(545, rowY + 25)
+//     .stroke();
+
+//   /* ---------- TOTAL ---------- */
+//   doc
+//     .font("Helvetica-Bold")
+//     .fontSize(14)
+//     .fillColor(COLORS.textDark)
+//     .text("Total Paid:", 330, rowY + 45);
+
+//   doc
+//     .fillColor("#16a34a") // Success Green
+//     .text("₹ 2,000.00", 445, rowY + 45, { width: 90, align: "right" });
+
+//   /* ---------- PAID STAMP ---------- */
+//   doc.save();
+//   doc.opacity(0.12);
+//   doc.rotate(-20, { origin: [420, 520] });
+
+//   doc.circle(420, 520, 70).lineWidth(3).stroke("#15803d");
+//   doc.circle(420, 520, 58).lineWidth(1).stroke("#15803d");
+
+//   doc
+//     .fillColor("#15803d")
+//     .font("Helvetica-Bold")
+//     .fontSize(10)
+//     .text(
+//       "STELLAR INSTITUTE OF TECHNOLOGY",
+//       350,
+//       485,
+//       { width: 140, align: "center" }
+//     );
+
+//   doc
+//     .fontSize(22)
+//     .text("PAID", 380, 515, {
+//       width: 80,
+//       align: "center",
+//     });
+
+//   doc
+//     .fontSize(8)
+//     .text("OFFICIAL RECEIPT", 360, 555, {
+//       width: 120,
+//       align: "center",
+//     });
+
+//   doc.restore();
+//   doc.opacity(1);
+
+//   /* ---------- FOOTER ---------- */
+//   doc
+//     .fontSize(9)
+//     .fillColor("#777")
+//     .text(
+//       "This is a digitally generated receipt issued by Stellar Institute of Technology. No signature required.",
+//       50,
+//       740,
+//       { width: 495, align: "center" }
+//     );
+
+//   doc
+//     .fillColor("#6d28d9")
+//     .text(
+//       "www.stellarcampus.com | admissions@stellarcampus.com",
+//       { align: "center" }
+//     );
+
+//   doc.end();
+
+//   const pdfBuffer = await new Promise((resolve) => {
+//     doc.on("end", () => resolve(Buffer.concat(chunks)));
+//   });
+
+//   /* ==================================================
+//      EMAIL SENDING
+//   ================================================== */
+//   const transporter = nodemailer.createTransport({
+//     host: "smtp.gmail.com",
+//     port: 465,
+//     secure: true,
+//     auth: {
+//       user: process.env.EMAIL_USER,
+//       pass: process.env.EMAIL_PASS,
+//     },
+//   });
+
+//   const htmlContent = `
+//     <div style="font-family:sans-serif;max-width:600px;margin:auto;border-radius:12px;overflow:hidden;border:1px solid #eee">
+//       <div style="background:${COLORS.accent};padding:20px;text-align:center">
+//         <h1 style="color:#fff;margin:0">Payment Successful</h1>
+//       </div>
+//       <div style="padding:30px;color:#333">
+//         <p>Hi <b>${user.fullName}</b>,</p>
+//         <p>
+//           We have successfully received your payment of <b>₹2,000</b>.
+//         </p>
+//         <p>
+//           Your <b>official receipt</b> and the 
+//           <b>Stellar Entrance Examination (SEE) – Curriculum</b>
+//           are attached for your reference.
+//         </p>
+//         <p>
+//           Best Regards,<br/>
+//           <b>Stellar Admissions Team</b>
+//         </p>
+//         </div>
+//     </div>
+//   `;
+
+//   await transporter.sendMail({
+//     from: '"Stellar Admissions" <admissions@stellarinstitute.edu>',
+//     to: user.email,
+//     subject: `Admission Receipt – ${user.fullName}`,
+//     html: htmlContent,
+//     attachments: [
+//       {
+//         filename: `Stellar_Receipt_${user.fullName.replace(/\s/g, "_")}.pdf`,
+//         content: pdfBuffer,
+//       },
+//       {
+//               filename: "Stellar_Entrance_Examination_SEE_Curriculum.pdf",
+//               path: path.join(assetsPath, "SEE_Curriculum.pdf"),
+//             },
+//     ],
+//   });
+// };
+
 import nodemailer from "nodemailer";
 import PDFDocument from "pdfkit";
 import path from "path";
@@ -735,7 +972,7 @@ import fs from "fs";
 
 export const sendPaymentSuccessEmail = async (user) => {
   /* ==================================================
-     CREATE PDF (Using New Branded Header Style)
+     CREATE PDF
   ================================================== */
   const doc = new PDFDocument({ size: "A4", margin: 40, bufferPages: true });
   const chunks = [];
@@ -744,39 +981,28 @@ export const sendPaymentSuccessEmail = async (user) => {
 
   const COLORS = {
     primary: "#0f172a",
-    accent: "#6d28d9", // Keeping your purple brand color
+    accent: "#6d28d9", 
     textDark: "#1e293b",
     textLight: "#64748b",
     divider: "#e2e8f0",
+    stampBlue: "#1e40af", // New Blue color for stamp
   };
 
-  // Adjusting asset paths based on your provided reference (process.cwd)
   const assetsPath = path.join(process.cwd(), "assets");
-  // const logoPath = path.join(assetsPath, "logo.png");
   const headerBgPath = path.join(assetsPath, "header-bg.jpg");
 
-  /**
-   * Helper Function to draw the Branded Header (Refactored from your reference)
-   */
   const drawHeader = () => {
     const headerHeight = 115;
     const pageWidth = 595.28;
 
-    // 1. Background
     if (fs.existsSync(headerBgPath)) {
       doc.image(headerBgPath, 0, 0, { width: pageWidth, height: headerHeight });
     } else {
       doc.rect(0, 0, pageWidth, headerHeight).fill(COLORS.primary);
     }
 
-    // 2. Logo
-    // if (fs.existsSync(logoPath)) {
-    //   doc.image(logoPath, 40, 20, { width: 65 });
-    // }
-
-    // 3. Title & Metadata
     doc
-      .fillColor("#1916eeff")
+      .fillColor("#ffffff") // Changed to white for better visibility on dark bg
       .font("Helvetica-Bold")
       .fontSize(20)
       .text("PAYMENT RECEIPT", 115, 35, { characterSpacing: 1 });
@@ -792,7 +1018,6 @@ export const sendPaymentSuccessEmail = async (user) => {
     });
   };
 
-  // Initialize Header
   drawHeader();
 
   /* ---------- BILLING DETAILS ---------- */
@@ -813,8 +1038,6 @@ export const sendPaymentSuccessEmail = async (user) => {
 
   /* ---------- PAYMENT TABLE ---------- */
   const tableTop = 240;
-
-  // Table Header
   doc.rect(50, tableTop, 495, 30).fill(COLORS.primary);
   doc
     .fillColor("#ffffff")
@@ -824,7 +1047,6 @@ export const sendPaymentSuccessEmail = async (user) => {
     .text("QTY", 360, tableTop + 10)
     .text("AMOUNT", 445, tableTop + 10, { width: 90, align: "right" });
 
-  // Table Row
   const rowY = tableTop + 45;
   doc
     .fillColor(COLORS.textDark)
@@ -833,82 +1055,37 @@ export const sendPaymentSuccessEmail = async (user) => {
     .text("Registration Fee – Campus Admission", 65, rowY)
     .text("1", 360, rowY);
 
-  doc
-    .font("Helvetica-Bold")
-    .text("₹ 2,000.00", 445, rowY, { width: 90, align: "right" });
+  doc.font("Helvetica-Bold").text("₹ 2,000.00", 445, rowY, { width: 90, align: "right" });
 
-  // Divider Line
-  doc
-    .strokeColor(COLORS.divider)
-    .lineWidth(1)
-    .moveTo(50, rowY + 25)
-    .lineTo(545, rowY + 25)
-    .stroke();
+  doc.strokeColor(COLORS.divider).lineWidth(1).moveTo(50, rowY + 25).lineTo(545, rowY + 25).stroke();
 
   /* ---------- TOTAL ---------- */
-  doc
-    .font("Helvetica-Bold")
-    .fontSize(14)
-    .fillColor(COLORS.textDark)
-    .text("Total Paid:", 330, rowY + 45);
+  doc.font("Helvetica-Bold").fontSize(14)
+     .fillColor(COLORS.textDark).text("Total Paid:", 330, rowY + 45);
+  doc.fillColor("#16a34a").text("₹ 2,000.00", 445, rowY + 45, { width: 90, align: "right" });
 
-  doc
-    .fillColor("#16a34a") // Success Green
-    .text("₹ 2,000.00", 445, rowY + 45, { width: 90, align: "right" });
-
-  /* ---------- PAID STAMP ---------- */
+  /* ---------- PAID STAMP (UPDATED TO BLUE) ---------- */
   doc.save();
-  doc.opacity(0.12);
+  doc.opacity(0.15); // Increased slightly for visibility
   doc.rotate(-20, { origin: [420, 520] });
 
-  doc.circle(420, 520, 70).lineWidth(3).stroke("#15803d");
-  doc.circle(420, 520, 58).lineWidth(1).stroke("#15803d");
+  doc.circle(420, 520, 70).lineWidth(3).stroke(COLORS.stampBlue);
+  doc.circle(420, 520, 58).lineWidth(1).stroke(COLORS.stampBlue);
 
   doc
-    .fillColor("#15803d")
+    .fillColor(COLORS.stampBlue)
     .font("Helvetica-Bold")
     .fontSize(10)
-    .text(
-      "STELLAR INSTITUTE OF TECHNOLOGY",
-      350,
-      485,
-      { width: 140, align: "center" }
-    );
+    .text("STELLAR INSTITUTE OF TECHNOLOGY", 350, 485, { width: 140, align: "center" });
 
-  doc
-    .fontSize(22)
-    .text("PAID", 380, 515, {
-      width: 80,
-      align: "center",
-    });
-
-  doc
-    .fontSize(8)
-    .text("OFFICIAL RECEIPT", 360, 555, {
-      width: 120,
-      align: "center",
-    });
+  doc.fontSize(22).text("PAID", 380, 515, { width: 80, align: "center" });
+  doc.fontSize(8).text("OFFICIAL RECEIPT", 360, 555, { width: 120, align: "center" });
 
   doc.restore();
-  doc.opacity(1);
 
   /* ---------- FOOTER ---------- */
-  doc
-    .fontSize(9)
-    .fillColor("#777")
-    .text(
-      "This is a digitally generated receipt issued by Stellar Institute of Technology. No signature required.",
-      50,
-      740,
-      { width: 495, align: "center" }
-    );
-
-  doc
-    .fillColor("#6d28d9")
-    .text(
-      "www.stellarcampus.com | admissions@stellarcampus.com",
-      { align: "center" }
-    );
+  doc.fontSize(9).fillColor("#777").text("This is a digitally generated receipt. No signature required.", 50, 740, { width: 495, align: "center" });
+  doc.fillColor(COLORS.accent).text("www.stellarcampus.com | admissions@stellarcampus.com", { align: "center" });
 
   doc.end();
 
@@ -930,32 +1107,29 @@ export const sendPaymentSuccessEmail = async (user) => {
   });
 
   const htmlContent = `
-    <div style="font-family:sans-serif;max-width:600px;margin:auto;border-radius:12px;overflow:hidden;border:1px solid #eee">
+    <div style="font-family:sans-serif;max-width:600px;margin:auto;border-radius:12px;border:1px solid #eee;overflow:hidden">
       <div style="background:${COLORS.accent};padding:20px;text-align:center">
         <h1 style="color:#fff;margin:0">Payment Successful</h1>
       </div>
-      <div style="padding:30px;color:#333">
+      <div style="padding:30px;color:#333;line-height:1.6">
         <p>Hi <b>${user.fullName}</b>,</p>
-        <p>
-          We have successfully received your payment of <b>₹2,000</b>.
-        </p>
-        <p>
-          Your <b>official receipt</b> and the 
-          <b>Stellar Entrance Examination (SEE) – Curriculum</b>
-          are attached for your reference.
-        </p>
-        <p>
-          Best Regards,<br/>
-          <b>Stellar Admissions Team</b>
-        </p>
-        </div>
+        <p>We have successfully received your payment of <b>₹2,000</b>.</p>
+        <p>Please find the following documents attached to this email:</p>
+        <ul>
+          <li><b>Official Payment Receipt</b></li>
+          <li><b>Stellar Entrance Examination (SEE) Curriculum</b></li>
+          <li><b>Interview Preparation Curriculum</b></li>
+        </ul>
+        <p>Review these documents carefully to prepare for the next steps of your admission process.</p>
+        <p>Best Regards,<br/><b>Stellar Admissions Team</b></p>
+      </div>
     </div>
   `;
 
   await transporter.sendMail({
     from: '"Stellar Admissions" <admissions@stellarinstitute.edu>',
     to: user.email,
-    subject: `Admission Receipt – ${user.fullName}`,
+    subject: `Admission Documents – ${user.fullName}`,
     html: htmlContent,
     attachments: [
       {
@@ -963,9 +1137,13 @@ export const sendPaymentSuccessEmail = async (user) => {
         content: pdfBuffer,
       },
       {
-              filename: "Stellar_Entrance_Examination_SEE_Curriculum.pdf",
-              path: path.join(assetsPath, "SEE_Curriculum.pdf"),
-            },
+        filename: "Stellar_Entrance_Examination_SEE_Curriculum.pdf",
+        path: path.join(assetsPath, "Stellar Entrance Examination (SEE) – Curriculum.pdf"),
+      },
+      {
+        filename: "Stellar_Interview_Curriculum.pdf",
+        path: path.join(assetsPath, "Interview_Curriculum.pdf"),
+      },
     ],
   });
 };
