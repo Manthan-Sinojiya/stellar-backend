@@ -125,73 +125,70 @@ export const sendPaymentSuccessEmail = async (user) => {
   const chunks = [];
   doc.on("data", (chunk) => chunks.push(chunk));
 
-  // --- 1. HEADER IMAGE (Draw first) ---
+  // --- 1. BACKGROUND HEADER IMAGE ---
+  // Drawn first so it sits behind the logo/text
   const bgPath = path.join(process.cwd(), "header-bg.png");
   if (fs.existsSync(bgPath)) {
-    // Spans full width at the top
-    doc.image(bgPath, 0, 0, { width: 612 }); // 612 is the full width of A4 in points
+    // This spans the top of the page
+    doc.image(bgPath, 0, 0, { width: 600 }); 
   }
 
   // --- 2. LOGO OVERLAY ---
+  // Drawn after background to appear on top
   const logoPath = path.join(process.cwd(), "logo.png");
   if (fs.existsSync(logoPath)) {
-    doc.image(logoPath, 50, 40, { width: 70 });
+    doc.image(logoPath, 50, 30, { width: 70 });
   }
 
-  // --- 3. HEADER TEXT (Positioned over the image) ---
-  doc.fillColor("#ffffff").fontSize(24).font("Helvetica-Bold").text("OFFICIAL RECEIPT", 110, 50, { align: "right" });
-  doc.fontSize(10).fillColor("#f0f0f0").font("Helvetica").text(`Receipt No: ST-${Date.now().toString().slice(-6)}`, { align: "right" });
+  // Header Text (White/Light if background is dark)
+  doc.fillColor("#ffffff").fontSize(22).font("Helvetica-Bold").text("OFFICIAL RECEIPT", 110, 45, { align: "right" });
+  doc.fontSize(10).fillColor("#eeeeee").font("Helvetica").text(`Receipt No: ST-${Date.now().toString().slice(-6)}`, { align: "right" });
   doc.text(`Date: ${new Date().toLocaleDateString('en-IN')}`, { align: "right" });
 
-  // --- 4. BILLING SECTION (Pushed down to avoid overlap with background image) ---
-  // We start this at y=250 to clear the building in your image
-  const billingTop = 260; 
-  doc.fillColor("#1a1a1a").fontSize(13).font("Helvetica-Bold").text("Billed To:", 50, billingTop);
-  
-  doc.fillColor("#444444").font("Helvetica").fontSize(11);
-  doc.text(user.fullName || "Valued Student", 50, billingTop + 20);
-  doc.text(user.email || "N/A");
+  doc.moveDown(4); // Move cursor below the header background area
+
+  // --- 3. BILLING DETAILS ---
+  doc.fillColor("#1a1a1a").fontSize(12).font("Helvetica-Bold").text("Billed To:", 50, 160);
+  doc.font("Helvetica").fontSize(11).fillColor("#333333").text(user.fullName);
+  doc.text(user.email);
   doc.text(user.mobile || "N/A");
 
-  // --- 5. ITEMS TABLE ---
-  const tableTop = 360; // Further down to allow breathing room
-  
-  // Table Header
-  doc.rect(50, tableTop, 500, 25).fill("#6d28d9"); // Stellar Purple
+  // --- 4. ITEMS TABLE ---
+  const tableTop = 240;
+  doc.rect(50, tableTop, 500, 25).fill("#6d28d9"); // Purple Header to match your UI
   doc.fillColor("#ffffff").font("Helvetica-Bold").fontSize(10);
   doc.text("Description", 65, tableTop + 8);
   doc.text("Qty", 350, tableTop + 8);
   doc.text("Amount", 450, tableTop + 8, { align: "right", width: 90 });
 
-  // Table Row
   const rowTop = tableTop + 35;
-  doc.fillColor("#333333").font("Helvetica").fontSize(11);
+  doc.fillColor("#000000").font("Helvetica").fontSize(11);
   doc.text("Registration Fee - Stellar Campus Admission", 65, rowTop);
   doc.text("1", 350, rowTop);
-  doc.font("Helvetica-Bold").fillColor("#000000").text("₹ 2,000.00", 450, rowTop, { align: "right", width: 90 });
+  doc.font("Helvetica-Bold").text("₹ 2,000.00", 450, rowTop, { align: "right", width: 90 });
 
-  // --- 6. SUMMARY SECTION ---
-  const summaryTop = rowTop + 40;
-  doc.strokeColor("#eeeeee").lineWidth(1).moveTo(50, summaryTop).lineTo(550, summaryTop).stroke();
-  
+  // Summary Line
+  doc.strokeColor("#eeeeee").lineWidth(1).moveTo(50, rowTop + 25).lineTo(550, rowTop + 25).stroke();
   doc.moveDown(2);
-  doc.fontSize(14).fillColor("#1a1a1a").font("Helvetica-Bold").text("Total Paid:", 350, doc.y, { continued: true });
+  doc.fontSize(14).fillColor("#1a1a1a").text("Total Paid:", 350, doc.y, { continued: true });
   doc.fillColor("#16a34a").text(" ₹ 2,000.00", { align: "right" });
 
-  // --- 7. PAID STAMP (Moved to Bottom Right) ---
+  // --- 5. OFFICIAL STAMP ---
+  // Positioning a "PAID" stamp image if you have one, or creating a vector stamp
   doc.opacity(0.8);
   doc.save();
-  doc.rotate(-15, { origin: [460, 680] }); 
-  doc.rect(400, 660, 120, 50).lineWidth(3).stroke("#16a34a");
-  doc.fillColor("#16a34a").font("Helvetica-Bold").fontSize(25).text("PAID", 415, 672);
+  doc.rotate(-15, { origin: [450, 450] }); // Slanted stamp look
+  doc.rect(400, 430, 120, 50).lineWidth(3).stroke("#16a34a");
+  doc.fillColor("#16a34a").font("Helvetica-Bold").fontSize(25).text("PAID", 415, 442);
   doc.restore();
   doc.opacity(1.0);
 
-  // --- 8. FOOTER ---
+  // --- 6. FOOTER ---
   doc.fontSize(9).fillColor("#999999").font("Helvetica").text(
-    "This is a digitally verified receipt. No physical signature is required.",
-    50, 780, { align: "center", width: 500 }
+    "This is a digitally verified receipt issued by Stellar Campus. No physical signature is required.",
+    50, 740, { align: "center", width: 500 }
   );
+  doc.fillColor("#6d28d9").text("www.stellarcampus.com | Support: admissions@stellarcampus.com", { align: "center" });
 
   doc.end();
 
@@ -199,7 +196,7 @@ export const sendPaymentSuccessEmail = async (user) => {
     doc.on("end", () => resolve(Buffer.concat(chunks)));
   });
 
-  // --- 9. EMAIL TRANSPORT ---
+  // --- 7. EMAIL CONFIG ---
   const transporter = nodemailer.createTransport({
     host: "smtp.gmail.com",
     port: 465,
@@ -210,17 +207,32 @@ export const sendPaymentSuccessEmail = async (user) => {
     },
   });
 
+  const htmlContent = `
+    <div style="font-family: sans-serif; color: #333; max-width: 600px; margin: auto; border: 1px solid #eee; border-radius: 12px; overflow: hidden;">
+      <div style="background: #6d28d9; padding: 20px; text-align: center;">
+        <h1 style="color: white; margin: 0; font-size: 24px;">Payment Successful</h1>
+      </div>
+      <div style="padding: 30px;">
+        <p>Hi <b>${user.fullName}</b>,</p>
+        <p>We've received your payment of <b>₹2,000.00</b> for the Stellar Campus registration. Your admission process is now moving to the next stage.</p>
+        <div style="border-left: 4px solid #6d28d9; padding-left: 15px; margin: 20px 0; background: #f8f7ff;">
+          <p style="margin: 5px 0;"><b>Transaction ID:</b> ST-${Date.now().toString().slice(-8)}</p>
+          <p style="margin: 5px 0;"><b>Status:</b> Completed</p>
+        </div>
+        <p>Your official receipt is attached below.</p>
+        <p>Best Regards,<br><b>Stellar Admissions Team</b></p>
+      </div>
+    </div>
+  `;
+
   await transporter.sendMail({
     from: '"Stellar Admissions" <admissions@stellarcampus.com>',
     to: user.email,
     subject: `Admission Receipt: ${user.fullName}`,
-    html: `<div style="font-family: sans-serif; padding: 20px;">
-            <h2>Payment Received</h2>
-            <p>Hi ${user.fullName}, your payment of ₹2,000.00 is successful. Please find your receipt attached.</p>
-           </div>`,
+    html: htmlContent,
     attachments: [
       {
-        filename: `Receipt_${user.fullName.replace(/\s/g, '_')}.pdf`,
+        filename: `Stellar_Receipt_${user.fullName.replace(/\s/g, '_')}.pdf`,
         content: pdfBuffer,
       },
     ],
