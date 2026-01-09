@@ -132,7 +132,7 @@ const razorpay = new Razorpay({
 // });
 export const createOrder = asyncHandler(async (req, res) => {
   const options = {
-    amount: 2000 * 100, // Still centralizing amount here (2000 INR)
+    amount: 20 * 100, // Still centralizing amount here (2000 INR)
     currency: "INR",
     receipt: `rcpt_${req.user.id}`,
   };
