@@ -1,13 +1,15 @@
 import asyncHandler from "express-async-handler";
-import User from "../models/User.js";
-import Education from "../models/Education.js";
 import Razorpay from "razorpay";
 import crypto from "crypto";
+import User from "../models/User.js";
+import Education from "../models/Education.js";
+import Payment from "../models/Payment.js"; // Import the new model
 import Certification from "../models/Certification.js";
 import ApplicationProgress from "../models/ApplicationProgress.js";
 import Application from "../models/ApplicationSchema.js";
 import { generateApplicationPDF } from "../utils/generateApplicationPDF.js";
 import { getSignedUploadUrl } from "../utils/s3.js"; // Adjust path as needed
+import { sendPaymentSuccessEmail } from "../utils/sendPaymentEmail.js"; // Path to your mailer util
 /* ------------------------------------------------------------------
    GET /api/application/profile
    Step-1: Fetch read-only user profile
@@ -155,32 +157,50 @@ export const createOrder = asyncHandler(async (req, res) => {
 export const verifyPayment = asyncHandler(async (req, res) => {
   const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
 
-  // 1. Generate signature to compare with Razorpay's signature
+  // 1. Verify Signature
   const body = razorpay_order_id + "|" + razorpay_payment_id;
   const expectedSignature = crypto
     .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
     .update(body.toString())
     .digest("hex");
 
-  const isAuthentic = expectedSignature === razorpay_signature;
-
-  if (isAuthentic) {
-    // 2. Update the user's progress in the database
-    // We use a new field "stepPaid" to track this
-    await ApplicationProgress.findOneAndUpdate(
-      { userId: req.user.id },
-      { stepPaid: true }, // Ensure this field exists in your ApplicationProgress model
-      { upsert: true }
-    );
-
-    res.json({
-      success: true,
-      message: "Payment verified successfully",
-    });
-  } else {
+  if (expectedSignature !== razorpay_signature) {
     res.status(400);
-    throw new Error("Payment verification failed: Invalid Signature");
+    throw new Error("Invalid payment signature. Verification failed.");
   }
+
+  // 2. Fetch User & Save Transaction
+  const user = await User.findById(req.user.id);
+  
+  const paymentRecord = await Payment.create({
+    userId: user._id,
+    fullName: user.fullName,
+    email: user.email,
+    mobile: user.mobile,
+    razorpay_order_id,
+    razorpay_payment_id,
+    amount: 2000,
+  });
+
+  // 3. Update Progress (Unlocks Step 3)
+  await ApplicationProgress.findOneAndUpdate(
+    { userId: req.user.id },
+    { stepPaid: true },
+    { upsert: true }
+  );
+
+  // 4. Send Automated Email with Attachments
+  try {
+    await sendPaymentSuccessEmail(user, paymentRecord);
+  } catch (error) {
+    console.error("Email Error:", error);
+    // We don't throw an error here because payment was already successful
+  }
+
+  res.json({
+    success: true,
+    message: "Payment verified, record saved, and email sent.",
+  });
 });
 
 /* ------------------------------------------------------------------
