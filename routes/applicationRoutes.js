@@ -5,6 +5,7 @@ import {
   getProgress,
   createOrder, 
   verifyPayment,
+  getAllPayments,
   uploadEducationFile,
   saveEducation,
   getEducation,
