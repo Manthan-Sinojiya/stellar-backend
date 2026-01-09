@@ -11,6 +11,7 @@ const applicationProgressSchema = new mongoose.Schema(
 
     step1Completed: { type: Boolean, default: false },
     step2Completed: { type: Boolean, default: false },
+    stepPaid:       { type: Boolean, default: false },
     step3Completed: { type: Boolean, default: false },
     step4Completed: { type: Boolean, default: false },
     step5Completed: { type: Boolean, default: false },
@@ -20,7 +21,4 @@ const applicationProgressSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-export default mongoose.model(
-  "ApplicationProgress",
-  applicationProgressSchema
-);
+export default mongoose.model("ApplicationProgress", applicationProgressSchema);

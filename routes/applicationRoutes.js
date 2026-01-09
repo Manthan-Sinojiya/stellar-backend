@@ -3,6 +3,8 @@ import { protect } from "../middleware/authMiddleware.js";
 import {
   getProfile,
   getProgress,
+  createOrder, 
+  verifyPayment,
   uploadEducationFile,
   saveEducation,
   getEducation,
@@ -33,13 +35,17 @@ router.post("/upload", protect, uploadEducationFile);
 router.post("/education", protect, saveEducation);
 router.get("/education", protect, getEducation);
 
-// STEP 3 – Aptitude (NEW)
+// STEP 3 – payment
+router.post("/payment/create-order", protect, createOrder);
+router.post("/payment/verify", protect, verifyPayment);
+
+// STEP 4 – Aptitude (NEW)
 router.post("/aptitude/complete", protect, completeAptitudeStep);
 
-// STEP 4 – certification
+// STEP 5 – certification
 router.post("/certification", protect, addCertification);
 
-// STEP 5 – interview
+// STEP 6 – interview
 router.post("/interview", protect, scheduleInterview);
 
 router.get("/:id/pdf", protect, getApplicationPDF);
