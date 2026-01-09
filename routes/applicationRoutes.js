@@ -39,7 +39,7 @@ router.get("/education", protect, getEducation);
 // STEP 3 – payment
 router.post("/payment/create-order", protect, createOrder);
 router.post("/payment/verify", protect, verifyPayment);
-router.route("/all").get(getAllPayments);
+router.route("/all").get(protect, adminOnly, getAllPayments);
 
 // STEP 4 – Aptitude (NEW)
 router.post("/aptitude/complete", protect, completeAptitudeStep);
