@@ -205,7 +205,7 @@ export const verifyPayment = asyncHandler(async (req, res) => {
 
 // In your payment routes/controller
 export const getAllPayments = asyncHandler(async (req, res) => {
-  const payments = await Payment.find().sort({ createdAt: -1 });
+  const payments = await Payment.find({}).sort({ createdAt: -1 });
   res.json({ success: true, payments });
 });
 
