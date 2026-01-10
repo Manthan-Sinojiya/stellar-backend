@@ -59,7 +59,6 @@ app.use(
     origin: ["http://localhost:5173","https://stellarcampus.com", "https://d1xgi380kxuazw.cloudfront.net"],
     methods: ["GET", "HEAD", "POST", "OPTIONS", "PUT", "PATCH", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: true
   })
 );
 /* ------------------------------------------------------------------
