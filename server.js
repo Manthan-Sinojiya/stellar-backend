@@ -62,7 +62,6 @@ app.use(
     credentials: true
   })
 );
-app.options("/api/:any*", cors());
 /* ------------------------------------------------------------------
    BODY PARSER
    - Enables Express to read JSON request bodies
