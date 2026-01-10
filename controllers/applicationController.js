@@ -110,27 +110,6 @@ const razorpay = new Razorpay({
  * @desc Create a Razorpay Order
  * @route POST /api/applications/payment/create-order
  */
-//   const { amount } = req.body; // Expecting amount in INR
-
-//   const options = {
-//     amount: Number(amount) * 100, // Amount in paise (e.g., 49900 for 499 INR)
-//     currency: "INR",
-//     receipt: `receipt_order_${req.user.id}_${Date.now()}`,
-//   };
-
-//   try {
-//     const order = await razorpay.orders.create(options);
-//     res.json({
-//       success: true,
-//       id: order.id,
-//       amount: order.amount,
-//       currency: order.currency,
-//     });
-//   } catch (error) {
-//     res.status(500);
-//     throw new Error("Razorpay Order Creation Failed");
-//   }
-// });
 export const createOrder = asyncHandler(async (req, res) => {
   const options = {
     amount: 2000 * 100, // Still centralizing amount here (2000 INR)
@@ -179,7 +158,7 @@ export const verifyPayment = asyncHandler(async (req, res) => {
     mobile: user.mobile,
     razorpay_order_id,
     razorpay_payment_id,
-    amount: 2000,
+    amount: 2,
   });
 
   // 3. Update Progress (Unlocks Step 3)

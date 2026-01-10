@@ -23,7 +23,7 @@ import dotenv from "dotenv";
 import cors from "cors";
 import mongoose from "mongoose";
 import { GridFSBucket } from "mongodb";
-
+import "dotenv/config"; // 1. Load env variables immediately
 // Database connection
 import connectDB from "./config/db.js";
 

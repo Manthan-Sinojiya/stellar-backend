@@ -39,7 +39,8 @@ router.get("/education", protect, getEducation);
 // STEP 3 – payment
 router.post("/payment/create-order", protect, createOrder);
 router.post("/payment/verify", protect, verifyPayment);
-router.route("/all").get(protect, adminOnly, getAllPayments);
+
+router.get("/all", getAllPayments); // If getAllPayments is undefined, this throws the error
 
 // STEP 4 – Aptitude (NEW)
 router.post("/aptitude/complete", protect, completeAptitudeStep);

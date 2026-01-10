@@ -1,6 +1,14 @@
 import nodemailer from "nodemailer";
 import path from "path";
 import fs from "fs";
+import Razorpay from "razorpay";
+import axios from "axios";
+
+// Initialize Razorpay
+const razorpay = new Razorpay({
+  key_id: process.env.RAZORPAY_KEY_ID,
+  key_secret: process.env.RAZORPAY_KEY_SECRET,
+});
 
 export const sendPaymentSuccessEmail = async (user, paymentDetails) => {
   const transporter = nodemailer.createTransport({
@@ -15,6 +23,9 @@ export const sendPaymentSuccessEmail = async (user, paymentDetails) => {
 
   const assetsPath = path.join(process.cwd(), "assets");
 
+  // -------------------------------
+  // STEP 2: Define Email Content
+  // -------------------------------
   const htmlContent = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; border-radius: 10px; overflow: hidden;">
       <div style="background: #6d28d9; padding: 20px; text-align: center; color: white;">
@@ -22,7 +33,7 @@ export const sendPaymentSuccessEmail = async (user, paymentDetails) => {
       </div>
       <div style="padding: 30px; color: #333; line-height: 1.6;">
         <p>Dear <b>${user.fullName}</b>,</p>
-        <p>We have received your payment of <b>₹2,000.00</b> for the Stellar Campus Registration.</p>
+        <p>We have received your payment of <b>₹${paymentDetails.amount}.00</b> for the Stellar Campus Registration.</p>
         
         <div style="background: #f4f4f4; padding: 15px; border-radius: 5px; margin: 20px 0;">
           <p style="margin: 0;"><b>Transaction Details:</b></p>
@@ -37,14 +48,16 @@ export const sendPaymentSuccessEmail = async (user, paymentDetails) => {
           <li><b>Entrance Examination (SEE) – Curriculum</b></li>
           <li><b>Interview Preparation Curriculum</b></li>
         </ul>
-        
+
         <p>Please log in to the portal to start your Aptitude Assessment.</p>
         <p>Best Regards,<br/><b>Stellar Admissions Team</b></p>
       </div>
     </div>
   `;
 
-  // Define your attachments
+  // -------------------------------
+  // STEP 3: Define Attachments
+  // -------------------------------
   const attachments = [
     {
       filename: "Stellar_SEE_Curriculum.pdf",
@@ -56,11 +69,16 @@ export const sendPaymentSuccessEmail = async (user, paymentDetails) => {
     },
   ];
 
+  // -------------------------------
+  // STEP 4: Send Email
+  // -------------------------------
   await transporter.sendMail({
     from: '"Stellar Admissions" <admissions@stellarcampus.com>',
     to: user.email,
     subject: `Payment Confirmation & Curriculums - ${user.fullName}`,
     html: htmlContent,
-    attachments: attachments,
+    attachments,
   });
+
+  console.log("Payment email sent successfully!");
 };
